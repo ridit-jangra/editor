@@ -1,5 +1,5 @@
 {
-  "name": "editor",
+  "name": "@ridit/editor",
   "private": true,
   "devDependencies": {
     "@types/bun": "latest"
@@ -8,6 +8,7 @@
     "typescript": "^5"
   },
   "workspaces": [
-    "packages/*"
+    "packages/*",
+    "examples/*"
   ]
 }

@@ -1,10 +1,17 @@
 {
-  "name": "@ridit/editor-core",
-  "module": "index.ts",
+  "name": "@ridit/editor-services",
   "type": "module",
+  "exports": {
+    ".": {
+      "default": "./src/index.ts"
+    },
+    "./node": "./src/exports/node.ts",
+    "./browser": "./src/exports/browser.ts"
+  },
   "private": true,
   "devDependencies": {
-    "@types/bun": "latest"
+    "@types/bun": "latest",
+    "electron": "^41.2.1"
   },
   "peerDependencies": {
     "typescript": "^5"
@@ -12,7 +19,6 @@
   "dependencies": {
     "@ridit/relay": "^0.1.4",
     "monaco-editor": "^0.55.1",
-    "node-pty": "^1.1.0",
     "xterm": "^5.3.0"
   }
 }
