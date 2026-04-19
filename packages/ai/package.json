@@ -1,5 +1,5 @@
 {
-  "name": "editor-extension",
+  "name": "ai",
   "module": "index.ts",
   "type": "module",
   "private": true,

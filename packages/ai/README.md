@@ -1,4 +1,4 @@
-# editor-extension
+# ai
 
 To install dependencies:
 

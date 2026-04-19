@@ -11,7 +11,16 @@
         "typescript": "^5",
       },
     },
-    "packages/editor-cli": {
+    "packages/ai": {
+      "name": "ai",
+      "devDependencies": {
+        "@types/bun": "latest",
+      },
+      "peerDependencies": {
+        "typescript": "^5",
+      },
+    },
+    "packages/cli": {
       "name": "editor-cli",
       "devDependencies": {
         "@types/bun": "latest",
@@ -20,7 +29,7 @@
         "typescript": "^5",
       },
     },
-    "packages/editor-core": {
+    "packages/services": {
       "name": "editor-core",
       "devDependencies": {
         "@types/bun": "latest",
@@ -29,16 +38,7 @@
         "typescript": "^5",
       },
     },
-    "packages/editor-extension": {
-      "name": "editor-extension",
-      "devDependencies": {
-        "@types/bun": "latest",
-      },
-      "peerDependencies": {
-        "typescript": "^5",
-      },
-    },
-    "packages/editor-ui": {
+    "packages/ui": {
       "name": "editor-ui",
       "devDependencies": {
         "@types/bun": "latest",
@@ -53,15 +53,15 @@
 
     "@types/node": ["@types/node@25.6.0", "", { "dependencies": { "undici-types": "~7.19.0" } }, "sha512-+qIYRKdNYJwY3vRCZMdJbPLJAtGjQBudzZzdzwQYkEPQd+PJGixUL5QfvCLDaULoLv+RhT3LDkwEfKaAkgSmNQ=="],
 
+    "ai": ["ai@workspace:packages/ai"],
+
     "bun-types": ["bun-types@1.3.12", "", { "dependencies": { "@types/node": "*" } }, "sha512-HqOLj5PoFajAQciOMRiIZGNoKxDJSr6qigAttOX40vJuSp6DN/CxWp9s3C1Xwm4oH7ybueITwiaOcWXoYVoRkA=="],
 
-    "editor-cli": ["editor-cli@workspace:packages/editor-cli"],
+    "editor-cli": ["editor-cli@workspace:packages/cli"],
 
-    "editor-core": ["editor-core@workspace:packages/editor-core"],
+    "editor-core": ["editor-core@workspace:packages/services"],
 
-    "editor-extension": ["editor-extension@workspace:packages/editor-extension"],
-
-    "editor-ui": ["editor-ui@workspace:packages/editor-ui"],
+    "editor-ui": ["editor-ui@workspace:packages/ui"],
 
     "typescript": ["typescript@5.9.3", "", { "bin": { "tsc": "bin/tsc", "tsserver": "bin/tsserver" } }, "sha512-jl1vZzPDinLr9eUt3J/t7V6FgNEw9QjvBPdysz9KfQDD41fQrC2Y4vKQdiaUpFT4bXlb1RHhLpp8wtm6M5TgSw=="],
 
