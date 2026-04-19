@@ -1,6 +1,7 @@
 import {
   EditorService,
   EventEmitter,
+  FileSystemService,
   LspService,
   VirtualFileSystemService
 } from '@ridit/editor-services/browser'
@@ -11,14 +12,12 @@ function init(): void {
 
     const lspService = new LspService(eventEmitter, {})
 
-    const virtualFileSystem = new VirtualFileSystemService(eventEmitter, {
-      name: 'MyVirtualFileSystem'
-    })
+    const fileSystem = new FileSystemService(eventEmitter, { mode: 'real' })
 
     const editorService = new EditorService(eventEmitter, {
       LspService: lspService,
       domElement: '.editor',
-      virtualFileSystem
+      fileSystem
     })
 
     editorService.start(window)

@@ -3,12 +3,13 @@ import json_worker from "monaco-editor/esm/vs/language/json/json.worker?worker";
 import css_worker from "monaco-editor/esm/vs/language/css/css.worker?worker";
 import html_worker from "monaco-editor/esm/vs/language/html/html.worker?worker";
 import ts_worker from "monaco-editor/esm/vs/language/typescript/ts.worker?worker";
+
 import * as monaco from "monaco-editor";
 import { Service } from "../service";
 import { path_to_language } from "./utils";
 import { EventEmitter } from "../emitter";
 import { LspService } from "../LspService";
-import { VirtualFileSystemService } from "../VirtualFileSystemService";
+import { FileSystemService } from "../FileSystemService";
 
 export type EditorOptions = monaco.editor.IStandaloneEditorConstructionOptions;
 
@@ -16,7 +17,7 @@ export type EditorDomElement = HTMLElement | string;
 
 export type EditorServiceOptions = {
   LspService?: LspService;
-  virtualFileSystem?: VirtualFileSystemService;
+  fileSystem?: FileSystemService;
   editorConfig?: EditorOptions;
   domElement?: EditorDomElement;
 };
@@ -28,7 +29,7 @@ export class EditorService extends Service {
   private lspServer: LspService | undefined = undefined;
   private editorConfig: EditorOptions | undefined = undefined;
   private domElement: EditorDomElement;
-  private virtualFileSystem: VirtualFileSystemService | undefined = undefined;
+  private fileSystem: FileSystemService | undefined = undefined;
 
   constructor(
     private eventEmiiter: EventEmitter,
@@ -36,7 +37,7 @@ export class EditorService extends Service {
       LspService,
       editorConfig,
       domElement = ".editor",
-      virtualFileSystem,
+      fileSystem,
     }: EditorServiceOptions,
   ) {
     super("EditorService");
@@ -44,7 +45,7 @@ export class EditorService extends Service {
     this.lspServer = LspService;
     this.editorConfig = editorConfig;
     this.domElement = domElement;
-    this.virtualFileSystem = virtualFileSystem;
+    this.fileSystem = fileSystem;
   }
 
   override start(window: any): void {
