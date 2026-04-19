@@ -1,5 +1,5 @@
 {
-  "name": "ai",
+  "name": "@ridit/editor-ai",
   "module": "index.ts",
   "type": "module",
   "private": true,
@@ -8,5 +8,8 @@
   },
   "peerDependencies": {
     "typescript": "^5"
+  },
+  "dependencies": {
+    "@ridit/dev": "^0.2.4"
   }
 }

@@ -1,5 +1,5 @@
 {
-  "name": "editor-cli",
+  "name": "@ridit/editor-cli",
   "module": "index.ts",
   "type": "module",
   "private": true,

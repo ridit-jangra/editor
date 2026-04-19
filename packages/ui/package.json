@@ -1,5 +1,5 @@
 {
-  "name": "editor-ui",
+  "name": "@ridit/editor-ui",
   "module": "index.ts",
   "type": "module",
   "private": true,
