@@ -2,8 +2,7 @@ import {
   EditorService,
   EventEmitter,
   FileSystemService,
-  LspService,
-  VirtualFileSystemService
+  LspService
 } from '@ridit/editor-services/browser'
 
 function init(): void {
