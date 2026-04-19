@@ -1,4 +1,6 @@
 import { EventEmitter } from "../emitter";
+import { virtualFileSystems } from "../filesystem";
+import { IFileSystem } from "../FileSystemService";
 import { Service } from "../service";
 
 export type FileSystemOptions = {
@@ -18,9 +20,6 @@ export type FileSystem = {
 };
 
 type NodeType = "folder" | "file";
-
-type MkDirOptions = { recursive?: boolean };
-type RmOptions = { recursive?: boolean };
 
 type EditNodeOptions = {
   path: string;
@@ -49,7 +48,7 @@ export function join(...paths: string[]): string {
   return "/" + parts.join("/");
 }
 
-export class VirtualFileSystemService extends Service {
+export class VirtualFileSystemService extends Service implements IFileSystem {
   private fileSystem: FileSystem = { nodes: [] };
   private fileSystemName: string;
 
@@ -57,37 +56,43 @@ export class VirtualFileSystemService extends Service {
     private eventEmitter: EventEmitter,
     { name }: FileSystemOptions,
   ) {
-    super("FileSystemService");
+    super("VirtualFileSystemService");
 
     this.fileSystemName = name;
+
+    if (virtualFileSystems.has(name)) {
+      console.warn(`[VirtualFileSystem]: ${name} already exists.`);
+      return;
+    }
+
+    virtualFileSystems.set(name, this);
   }
 
-  override start(window: any): void {
-    window.fs = this;
-  }
-
-  writeFile(path: string, content: string = ""): Node {
+  writeFile(path: string, content: string = ""): Promise<void> {
     if (this.fileSystem.nodes.some((n) => n.path === path)) {
       throw new Error(`File already exists at path: ${path}`);
     }
 
-    const newNode: Node = {
+    this.fileSystem.nodes.push({
       name: path.split("/").pop()!,
       type: "file",
       path,
       content,
-    };
-    this.fileSystem.nodes.push(newNode);
-    return newNode;
+    });
+
+    return Promise.resolve();
   }
 
-  mkdir(path: string, { recursive }: MkDirOptions = {}): Node {
+  mkdir(
+    path: string,
+    { recursive }: { recursive?: boolean } = {},
+  ): Promise<void> {
     if (recursive) {
       const parts = path.split("/").filter(Boolean);
       let current = "";
       for (const part of parts) {
         current += "/" + part;
-        if (!this.exists(current)) {
+        if (!this.fileSystem.nodes.some((n) => n.path === current)) {
           this.fileSystem.nodes.push({
             name: part,
             type: "folder",
@@ -95,23 +100,23 @@ export class VirtualFileSystemService extends Service {
           });
         }
       }
-      return this.fileSystem.nodes.find((n) => n.path === path)!;
+      return Promise.resolve();
     }
 
     if (this.fileSystem.nodes.some((n) => n.path === path)) {
       throw new Error(`Directory already exists at path: ${path}`);
     }
 
-    const newNode: Node = {
+    this.fileSystem.nodes.push({
       name: path.split("/").pop()!,
       type: "folder",
       path,
-    };
-    this.fileSystem.nodes.push(newNode);
-    return newNode;
+    });
+
+    return Promise.resolve();
   }
 
-  readFile(path: string): string {
+  readFile(path: string): Promise<string> {
     const node = this.fileSystem.nodes.find((n) => n.path === path);
     if (!node) {
       throw new Error(`No file found at path: ${path}`);
@@ -119,10 +124,10 @@ export class VirtualFileSystemService extends Service {
     if (node.type !== "file") {
       throw new Error(`Path is a directory, not a file: ${path}`);
     }
-    return node.content ?? "";
+    return Promise.resolve(node.content ?? "");
   }
 
-  readdir(path: string): Node[] {
+  readdir(path: string): Promise<Node[]> {
     const dir = this.fileSystem.nodes.find(
       (n) => n.path === path && n.type === "folder",
     );
@@ -130,30 +135,32 @@ export class VirtualFileSystemService extends Service {
       throw new Error(`No directory found at path: ${path}`);
     }
 
-    return this.fileSystem.nodes.filter((n) => {
+    const children = this.fileSystem.nodes.filter((n) => {
       if (!n.path.startsWith(path + "/")) return false;
       const remainder = n.path.slice(path.length + 1);
       return !remainder.includes("/");
     });
+
+    return Promise.resolve(children);
   }
 
-  stat(path: string): Node {
+  stat(path: string): Promise<Node> {
     const node = this.fileSystem.nodes.find((n) => n.path === path);
     if (!node) {
       throw new Error(`No node found at path: ${path}`);
     }
-    return { ...node };
+    return Promise.resolve({ ...node });
   }
 
-  exists(path: string): boolean {
-    return this.fileSystem.nodes.some((n) => n.path === path);
+  exists(path: string): Promise<boolean> {
+    return Promise.resolve(this.fileSystem.nodes.some((n) => n.path === path));
   }
 
-  rename(oldPath: string, newPath: string): void {
-    if (!this.exists(oldPath)) {
+  rename(oldPath: string, newPath: string): Promise<void> {
+    if (!this.fileSystem.nodes.some((n) => n.path === oldPath)) {
       throw new Error(`No node found at path: ${oldPath}`);
     }
-    if (this.exists(newPath)) {
+    if (this.fileSystem.nodes.some((n) => n.path === newPath)) {
       throw new Error(`A node already exists at path: ${newPath}`);
     }
 
@@ -166,9 +173,11 @@ export class VirtualFileSystemService extends Service {
       }
       return n;
     });
+
+    return Promise.resolve();
   }
 
-  update({ path, newNode }: EditNodeOptions): Node {
+  update({ path, newNode }: EditNodeOptions): Promise<Node> {
     const index = this.fileSystem.nodes.findIndex((n) => n.path === path);
     if (index === -1) {
       throw new Error(`No node found at path: ${path}`);
@@ -179,10 +188,10 @@ export class VirtualFileSystemService extends Service {
       ...newNode,
     };
 
-    return { ...this.fileSystem.nodes[index]! };
+    return Promise.resolve({ ...this.fileSystem.nodes[index]! });
   }
 
-  rm(path: string, { recursive }: RmOptions = {}): void {
+  rm(path: string, { recursive }: { recursive?: boolean } = {}): Promise<void> {
     const node = this.fileSystem.nodes.find((n) => n.path === path);
     if (!node) {
       throw new Error(`No node found at path: ${path}`);
@@ -202,5 +211,7 @@ export class VirtualFileSystemService extends Service {
     this.fileSystem.nodes = this.fileSystem.nodes.filter(
       (n) => n.path !== path && !n.path.startsWith(path + "/"),
     );
+
+    return Promise.resolve();
   }
 }

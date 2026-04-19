@@ -3,7 +3,7 @@ import type { editor } from "monaco-editor";
 import { createClient } from "./client";
 import { Service } from "../service";
 import type { EventEmitter } from "../emitter";
-import { LSP_START_SERVER } from "../IPCService/channels";
+import { LSP_START_SERVER } from "../channels";
 
 export type LspServiceOptions = {
   disableInBuiltTypescriptWorker?: boolean;
