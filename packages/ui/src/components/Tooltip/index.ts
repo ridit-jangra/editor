@@ -1,7 +1,5 @@
-import { Style } from "../../types";
 import { cn } from "../../utils/cn";
 import { h } from "../../utils/h";
-import { getStyle } from "../../utils/style";
 
 export interface TooltipProps {
   text?: string;
@@ -13,16 +11,15 @@ export interface TooltipProps {
   hide_delay?: number;
 }
 
-export function Tooltip(opts: TooltipProps, style: Style) {
+export function Tooltip(opts: TooltipProps) {
   const tip = h("div", {
     class: cn(
       "fixed z-[9999] hidden px-2 py-px text-[12.5px] ",
       "text-tooltip-foreground min-w-max border border-tooltip-border rounded-full",
       "animate-in fade-in zoom-in-95 duration-150",
-      getStyle(style),
+
       opts.class,
     ),
-    uiStyle: style,
   });
 
   if (opts.content) {
