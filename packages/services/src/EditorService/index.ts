@@ -17,9 +17,9 @@ export type EditorDomElement = HTMLElement | string;
 
 export type EditorServiceOptions = {
   LspService?: LspService;
-  fileSystem?: FileSystemService;
+  fileSystem: FileSystemService;
   editorConfig?: EditorOptions;
-  domElement?: EditorDomElement;
+  theme?: "Dark" | "Light";
 };
 
 export class EditorService extends Service {
@@ -28,30 +28,27 @@ export class EditorService extends Service {
   private editor: monaco.editor.IStandaloneCodeEditor | null = null;
   private lspServer: LspService | undefined = undefined;
   private editorConfig: EditorOptions | undefined = undefined;
-  private domElement: EditorDomElement;
-  private fileSystem: FileSystemService | undefined = undefined;
+  private fileSystem: FileSystemService;
+  private window: any;
+  private theme: "Dark" | "Light" | undefined = undefined;
 
   constructor(
     private eventEmiiter: EventEmitter,
-    {
-      LspService,
-      editorConfig,
-      domElement = ".editor",
-      fileSystem,
-    }: EditorServiceOptions,
+    { LspService, editorConfig, fileSystem, theme }: EditorServiceOptions,
   ) {
     super("EditorService");
 
     this.lspServer = LspService;
     this.editorConfig = editorConfig;
-    this.domElement = domElement;
     this.fileSystem = fileSystem;
+    this.theme = theme;
   }
 
   override start(window: any): void {
     const disableInBuiltTypescriptWorker = this.lspServer
       ? this.lspServer.config.disableInBuiltTypescriptWorker
       : false;
+
     window.MonacoEnvironment = {
       getWorker(_: unknown, label: string) {
         if (label === "json") return new json_worker();
@@ -66,11 +63,18 @@ export class EditorService extends Service {
       },
     };
 
+    this.window = window;
     if (this.lspServer) window.monaco = monaco;
   }
 
-  public async mount(document: any): Promise<void> {
-    const el = this.resolveElement(document);
+  public async mount(
+    document: any,
+    domElement: EditorDomElement,
+    theme: "Dark" | "Light",
+  ): Promise<void> {
+    const el = this.resolveElement(document, domElement);
+
+    this.theme = theme;
 
     if (!el) {
       console.warn("[EditorService] Mount element not found");
@@ -79,7 +83,7 @@ export class EditorService extends Service {
 
     this.editor = monaco.editor.create(el, {
       language: "plaintext",
-      theme: "theme",
+      theme: this.theme === "Dark" ? "vs-dark" : "vs-light",
 
       selectionHighlight: true,
       renderLineHighlight: "all",
@@ -103,20 +107,24 @@ export class EditorService extends Service {
       ...this.editorConfig,
     });
 
-    if (this.lspServer) this.lspServer.start(window, monaco, this.editor);
+    if (this.lspServer)
+      this.lspServer.start(window, this.window.monaco, this.editor);
   }
 
-  private resolveElement(root: Document): HTMLElement | null {
-    if (this.domElement instanceof HTMLElement) {
-      return this.domElement;
+  private resolveElement(
+    root: Document,
+    domElement: EditorDomElement,
+  ): HTMLElement | null {
+    if (domElement instanceof HTMLElement) {
+      return domElement;
     }
 
-    if (this.domElement.startsWith(".")) {
-      return root.querySelector(this.domElement);
+    if (domElement.startsWith(".")) {
+      return root.querySelector(domElement);
     }
 
-    if (this.domElement.startsWith("#")) {
-      return root.getElementById(this.domElement);
+    if (domElement.startsWith("#")) {
+      return root.getElementById(domElement);
     }
 
     return null;
@@ -124,8 +132,7 @@ export class EditorService extends Service {
 
   public async create_model(file_path: string) {
     const uri = monaco.Uri.file(file_path);
-
-    const content = "";
+    const content = (await this.fileSystem.readFile(file_path)) ?? "";
 
     const existing = monaco.editor.getModel(uri);
     const model =
@@ -137,13 +144,19 @@ export class EditorService extends Service {
       );
     if (existing && existing.getValue() !== content) existing.setValue(content);
 
-    return {
+    const entry = {
       uri: file_path,
       model,
       dispose: () => model.dispose(),
       cursor_position: { line: 1, col: 1 },
       selection: { startLine: 1, startCol: 1, endLine: 1, endCol: 1 },
     };
+
+    if (!this.models.find((m) => m.uri === file_path)) {
+      this.models.push(entry);
+    }
+
+    return entry;
   }
 
   public add_model(model: any): void {

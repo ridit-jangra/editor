@@ -1,4 +1,3 @@
-import { Style } from "../../types";
 import { cn } from "../../utils/cn";
 import { h } from "../../utils/h";
 
@@ -12,7 +11,7 @@ export type ButtonSize = "sm" | "md" | "lg" | "icon";
 
 export function Button(
   label: string | HTMLElement,
-  style: Style,
+
   opts?: {
     variant?: ButtonVariant;
     size?: ButtonSize;
@@ -66,7 +65,7 @@ export function Button(
         type: opts?.type ?? "button",
         disabled: opts?.disabled ?? false,
       },
-      uiStyle: style,
+
       on: opts?.onClick
         ? { click: (e) => opts.onClick!(e as MouseEvent) }
         : undefined,
@@ -76,7 +75,6 @@ export function Button(
       "span",
       {
         class: "min-w-0 w-full truncate flex items-center justify-center",
-        uiStyle: style,
       },
       label,
     ),

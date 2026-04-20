@@ -23,7 +23,10 @@
   "dependencies": {
     "@electron-toolkit/preload": "^3.0.2",
     "@electron-toolkit/utils": "^4.0.0",
-    "@ridit/editor-services": "workspace:*"
+    "@ridit/editor-services": "workspace:*",
+    "@ridit/editor-ui": "workspace:*",
+    "bufferutil": "^4.1.0",
+    "ws": "^8.20.0"
   },
   "devDependencies": {
     "@electron-toolkit/eslint-config-prettier": "^3.0.0",

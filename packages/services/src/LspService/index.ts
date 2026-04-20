@@ -1,9 +1,8 @@
-import type { Client } from "@ridit/relay";
+import type { Client, Server } from "@ridit/relay";
 import type { editor } from "monaco-editor";
 import { createClient } from "./client";
 import { Service } from "../service";
 import type { EventEmitter } from "../emitter";
-import { LSP_START_SERVER } from "../channels";
 
 export type LspServiceOptions = {
   disableInBuiltTypescriptWorker?: boolean;
@@ -16,6 +15,7 @@ export class LspService extends Service {
   private client: Client | null = null;
   private defaultWorkspaceFolder: string | undefined = undefined;
   private port: number | undefined = undefined;
+  private window: any;
   public config: LspServiceOptions;
 
   constructor(
@@ -42,19 +42,20 @@ export class LspService extends Service {
     monaco: any,
     editor: editor.IStandaloneCodeEditor,
   ) {
+    this.window = window;
+    this.editor = editor;
+
     this.create(monaco);
 
+    await this.startServer();
     await this.startClient();
-    this.startServer();
-
-    this.editor = editor;
   }
   override async stop() {
     await this.stopClient();
   }
 
-  private startServer() {
-    this.eventEmitter.emit(LSP_START_SERVER);
+  private async startServer() {
+    await this.window.lsp.startServer(this.port);
   }
   private async startClient() {
     if (!this.client) {
@@ -63,6 +64,8 @@ export class LspService extends Service {
       );
       return;
     }
+
+    this.client.register({ languageId: "python", extensions: ["py"] });
 
     await this.client.start(this.defaultWorkspaceFolder, this.port);
   }
@@ -92,9 +95,4 @@ export class LspService extends Service {
 
     this.client.updateWorkspaceRoot(workspaceFolderPath);
   }
-  editServices(services: string[]) {}
-
-  addServer() {}
-  removeServer() {}
-  getAllServers() {}
 }

@@ -25,6 +25,7 @@ export class FileSystemService extends Service implements IFileSystem {
 
   constructor(
     private eventEmitter: EventEmitter,
+    private window: any,
     { mode, name }: FileSystemServiceOptions,
   ) {
     super("FileSystemService");
@@ -38,7 +39,7 @@ export class FileSystemService extends Service implements IFileSystem {
         this.fs = fs;
       }
     } else {
-      this.fs = new RealFileSystemService();
+      this.fs = new RealFileSystemService(window);
     }
   }
 

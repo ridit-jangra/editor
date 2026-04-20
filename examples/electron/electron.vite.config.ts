@@ -15,7 +15,7 @@ export default defineConfig({
     build: {
       externalizeDeps: false, // ✅ bundle ALL deps including workspace packages
       rollupOptions: {
-        external: ['electron', /^node:/] // ✅ only keep electron + node builtins external
+        external: ['electron', /^node:/, 'utf-8-validate', 'bufferutil']
       }
     }
   },
@@ -51,7 +51,9 @@ export default defineConfig({
           __dirname,
           '../../packages/services/src/exports/renderer.ts'
         ),
-        '@ridit/editor-services': resolve(__dirname, '../../packages/services/src/index.ts')
+        '@ridit/editor-services': resolve(__dirname, '../../packages/services/src/index.ts'),
+        '@ridit/editor-ui/static-css': resolve(__dirname, '../../packages/ui/src/static-css'),
+        '@ridit/editor-ui': resolve(__dirname, '../../packages/ui/src/index.ts')
       }
     }
   }

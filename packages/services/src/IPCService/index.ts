@@ -1,6 +1,7 @@
 import { ipcMain } from "electron";
 import { EventEmitter } from "../emitter";
 import { Service } from "../service";
+import { Server } from "@ridit/relay/server";
 
 import fs from "fs";
 import path from "path";
@@ -18,7 +19,11 @@ import {
   FS_READ_BASE_64,
   FS_RELATIVE,
   FS_OPEN,
+  LSP_START_SERVER,
+  LSP_REGISTER_SERVER,
+  LSP_STOP_SERVER,
 } from "../channels";
+import { resolve_pylsp, resolve_python } from "../LspService/utils";
 
 export type IPCServiceOptions = {};
 
@@ -32,6 +37,18 @@ export class IPCService extends Service {
   }
 
   override start(ipc: typeof ipcMain): void {
+    const lspServer = new Server();
+    let isLspServerStarted = false;
+
+    lspServer.register({
+      languageId: "python",
+      resolve: () => {
+        const pythonPath = resolve_python();
+        if (!pythonPath) return null;
+        return resolve_pylsp(pythonPath);
+      },
+    });
+
     ipc.handle(FS_EXISTS, (_event: any, filePath: string) => {
       return fs.existsSync(filePath);
     });
@@ -101,6 +118,22 @@ export class IPCService extends Service {
 
     ipc.handle(FS_OPEN, (_event: any, filePath: string) => {
       return fs.readFileSync(filePath);
+    });
+
+    ipc.handle(LSP_REGISTER_SERVER, (_event, def) => {
+      lspServer.register(def);
+    });
+
+    ipc.handle(LSP_START_SERVER, async (_event, port) => {
+      if (isLspServerStarted) return;
+      const server = lspServer.start(port);
+
+      isLspServerStarted = true;
+      return server;
+    });
+
+    ipc.handle(LSP_STOP_SERVER, () => {
+      return lspServer.stop();
     });
   }
 

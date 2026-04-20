@@ -1,4 +1,5 @@
 @import './base.css';
+@import '@ridit/editor-ui/static-css/workbench.css';
 
 body {
   display: flex;

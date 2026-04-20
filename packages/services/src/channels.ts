@@ -51,3 +51,5 @@ export const TERMINAL_GET_OUTPUT = "terminal:getOutput";
 export const TERMINAL_OUTPUT_RESPONSE = "terminal:outputResponse";
 
 export const LSP_START_SERVER = "lsp:startServer";
+export const LSP_REGISTER_SERVER = "lsp:registerServer";
+export const LSP_STOP_SERVER = "lsp:stopServer";

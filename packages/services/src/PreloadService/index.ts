@@ -1,5 +1,4 @@
 import { Service } from "../service";
-import { ipcRenderer } from "electron";
 import { IFileSystem } from "../FileSystemService";
 import {
   FS_EXISTS,
@@ -10,6 +9,9 @@ import {
   FS_CREATE_DIR,
   FS_REMOVE,
   FS_RENAME,
+  LSP_START_SERVER,
+  LSP_STOP_SERVER,
+  LSP_REGISTER_SERVER,
 } from "../channels";
 
 export class PreloadService extends Service {
@@ -17,8 +19,8 @@ export class PreloadService extends Service {
     super("PreloadService");
   }
 
-  override start(): void {
-    const bridge: IFileSystem = {
+  override start(contextBridge: any, ipcRenderer: any): void {
+    const fsBridge: IFileSystem = {
       exists: (path) => ipcRenderer.invoke(FS_EXISTS, path),
       stat: (path) => ipcRenderer.invoke(FS_STAT, path),
       readdir: (path) => ipcRenderer.invoke(FS_READDIR, path),
@@ -31,7 +33,14 @@ export class PreloadService extends Service {
       rename: (old, next) => ipcRenderer.invoke(FS_RENAME, old, next),
     };
 
-    const { contextBridge } = require("electron");
-    contextBridge.exposeInMainWorld("fs", bridge);
+    const lspBridge = {
+      registerServer: (def: any) =>
+        ipcRenderer.invoke(LSP_REGISTER_SERVER, def),
+      startServer: (port: number) => ipcRenderer.invoke(LSP_START_SERVER, port),
+      stopServer: () => ipcRenderer.invoke(LSP_STOP_SERVER),
+    };
+
+    contextBridge.exposeInMainWorld("fs", fsBridge);
+    contextBridge.exposeInMainWorld("lsp", lspBridge);
   }
 }
