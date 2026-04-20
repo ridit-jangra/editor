@@ -1,5 +1,4 @@
 import { Tooltip } from "../components/Tooltip";
-import { Style } from "../types";
 
 type Child =
   | HTMLElement
@@ -26,7 +25,6 @@ type HProps<T extends Element> = {
     delay?: number;
     hide_delay?: number;
   };
-  uiStyle: Style;
 } & Record<string, any>;
 
 export function h<K extends keyof HTMLElementTagNameMap>(
@@ -78,7 +76,7 @@ export function h(tag: any, props?: any, ...children: Child[]) {
     }
 
     if (tooltip) {
-      Tooltip({ ...tooltip, child: el }, uiStyle);
+      Tooltip({ ...tooltip, child: el });
     }
 
     if (attrs) {
