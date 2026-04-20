@@ -1,0 +1,104 @@
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+.wb-root {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  width: 100vw;
+  background: var(--wb-bg);
+  color: var(--wb-fg);
+  overflow: hidden;
+}
+
+.wb-titlebar {
+  height: 35px;
+  background: var(--wb-bg);
+  display: flex;
+  align-items: center;
+  padding: 0 12px;
+  user-select: none;
+  -webkit-app-region: drag;
+}
+
+.wb-titlebar-title {
+  color: var(--wb-titlebar-title);
+}
+
+.wb-editor {
+  flex: 1;
+  overflow: hidden;
+  height: 100%;
+}
+
+.wb-editor-area {
+  flex: 1;
+  overflow: hidden;
+  height: 100%;
+  background: var(--wb-editor-bg);
+}
+
+.wb-editor-viewport {
+  width: 100%;
+  height: 100%;
+}
+
+.wb-tab-bar {
+  display: flex;
+  align-items: center;
+  background: var(--wb-tab-bg);
+  height: 35px;
+  overflow-x: auto;
+  overflow-y: hidden;
+}
+
+.wb-tab {
+  display: flex;
+  align-items: center;
+  padding: 0 12px;
+  height: 100%;
+  color: var(--wb-tab-fg);
+  background: var(--wb-tab-bg);
+  cursor: pointer;
+  white-space: nowrap;
+  border-right: 1px solid var(--wb-bg);
+}
+
+.wb-tab--active {
+  background: var(--wb-tab-active-bg);
+  color: var(--wb-tab-active-fg);
+}
+
+.wb-tab:hover {
+  background: var(--wb-tab-hover-bg);
+  color: var(--wb-tab-hover-fg);
+}
+
+.wb-status-bar {
+  height: 22px;
+  background: var(--wb-status-bg);
+  color: var(--wb-status-fg);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 8px;
+  font-size: 12px;
+}
+
+.wb-status-bar-item {
+  padding: 0 6px;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+}
+
+.wb-status-bar-item:hover {
+  background: var(--wb-status-hover-bg);
+  color: var(--wb-status-hover-fg);
+}
