@@ -1,5 +1,6 @@
 export const STORAGE_GET = "storage:get";
 export const STORAGE_SET = "storage:set";
+export const STORAGE_CREATE_IF_NOT_EXISTS = "store:createIfNotExists";
 
 export const WORKSPACE_GET = "workspace:get";
 export const WORKSPACE_STORE = "workspace:store";
