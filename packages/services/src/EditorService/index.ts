@@ -15,6 +15,12 @@ import { FileSystemService } from "../FileSystemService";
 import { normalize } from "../VirtualFileSystemService";
 import { ExplorerService } from "../ExplorerService";
 import { StorageService } from "../StorageService";
+import {
+  STATUSBAR_SET_FILENAME,
+  STATUSBAR_SET_INDENTATION,
+  STATUSBAR_SET_LANGUAGE,
+  STATUSBAR_SET_LINE_COL,
+} from "../emitter/channels";
 
 export type EditorOptions = monaco.editor.IStandaloneEditorConstructionOptions;
 
@@ -282,6 +288,33 @@ export class EditorService extends Service {
 
         return true;
       },
+    });
+
+    this.editor.onDidChangeCursorPosition((e) => {
+      this.eventEmiiter.emit(STATUSBAR_SET_LINE_COL, {
+        line: e.position.lineNumber,
+        col: e.position.column,
+      });
+    });
+
+    this.editor.onDidChangeModel((e) => {
+      if (!e.newModelUrl) return;
+      const model = monaco.editor.getModel(e.newModelUrl);
+      if (!model) return;
+
+      this.eventEmiiter.emit(STATUSBAR_SET_LANGUAGE, model.getLanguageId());
+      this.eventEmiiter.emit(STATUSBAR_SET_FILENAME, e.newModelUrl.fsPath);
+
+      const options = model.getOptions();
+      this.eventEmiiter.emit(STATUSBAR_SET_INDENTATION, options.tabSize);
+    });
+
+    this.editor.onDidChangeModelLanguage((e) => {
+      this.eventEmiiter.emit(STATUSBAR_SET_LANGUAGE, e.newLanguage);
+    });
+
+    this.editor.onDidChangeModelOptions((e) => {
+      this.eventEmiiter.emit(STATUSBAR_SET_INDENTATION, e.tabSize);
     });
 
     if (this.lspServer)
