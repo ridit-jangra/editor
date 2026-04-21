@@ -1,7 +1,10 @@
 import { Service } from "../service";
 import { RealFileSystemService } from "../RealFileSystemService";
 import { virtualFileSystems } from "../filesystem";
-import { VirtualFileSystemService } from "../VirtualFileSystemService";
+import {
+  normalize,
+  VirtualFileSystemService,
+} from "../VirtualFileSystemService";
 import { EventEmitter } from "../emitter";
 
 export type FileSystemServiceOptions = {
@@ -18,6 +21,8 @@ export interface IFileSystem {
   mkdir: (path: string, opts?: { recursive?: boolean }) => Promise<void>;
   rm: (path: string, opts?: { recursive?: boolean }) => Promise<void>;
   rename: (oldPath: string, newPath: string) => Promise<void>;
+  getRootStructure: (path: string) => Promise<any>;
+  readTree: (path: string) => Promise<any>;
 }
 
 export class FileSystemService extends Service implements IFileSystem {
@@ -43,35 +48,43 @@ export class FileSystemService extends Service implements IFileSystem {
     }
   }
 
-  exists(path: string) {
-    return this.fs.exists(path);
-  }
-
-  stat(path: string) {
-    return this.fs.stat(path);
+  readFile(path: string) {
+    return this.fs.readFile(normalize(path));
   }
 
   readdir(path: string) {
-    return this.fs.readdir(path);
+    return this.fs.readdir(normalize(path));
   }
 
-  readFile(path: string) {
-    return this.fs.readFile(path);
+  stat(path: string) {
+    return this.fs.stat(normalize(path));
   }
 
-  writeFile(path: string, content: string = "") {
-    return this.fs.writeFile(path, content);
+  exists(path: string) {
+    return this.fs.exists(normalize(path));
   }
 
-  mkdir(path: string, options: { recursive?: boolean } = {}) {
-    return this.fs.mkdir(path, options);
+  mkdir(path: string, options = {}) {
+    return this.fs.mkdir(normalize(path), options);
   }
 
-  rm(path: string, options: { recursive?: boolean } = {}) {
-    return this.fs.rm(path, options);
+  writeFile(path: string, content = "") {
+    return this.fs.writeFile(normalize(path), content);
+  }
+
+  rm(path: string, options = {}) {
+    return this.fs.rm(normalize(path), options);
   }
 
   rename(oldPath: string, newPath: string) {
-    return this.fs.rename(oldPath, newPath);
+    return this.fs.rename(normalize(oldPath), normalize(newPath));
+  }
+
+  readTree(path: string) {
+    return this.fs.readTree(normalize(path));
+  }
+
+  getRootStructure(path: string) {
+    return this.fs.getRootStructure(normalize(path));
   }
 }
