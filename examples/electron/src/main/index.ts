@@ -1,7 +1,7 @@
 import { app, shell, BrowserWindow, ipcMain } from 'electron'
 import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
-import { EventEmitter, IPCService } from '@ridit/editor-services/node'
+import { EventEmitter, MainProcessService } from '@ridit/editor-services/node'
 import icon from '../../resources/icon.png?asset'
 
 const eventEmitter = new EventEmitter()
@@ -20,7 +20,7 @@ function createWindow(): void {
     }
   })
 
-  const ipcService = new IPCService(eventEmitter)
+  const ipcService = new MainProcessService(eventEmitter)
   ipcService.start(ipcMain)
 
   mainWindow.on('ready-to-show', () => {

@@ -13,7 +13,7 @@ function init(): void {
     const eventEmitter = new EventEmitter()
 
     const storageService = new StorageService()
-    storageService.start(window, 'electron')
+    await storageService.start(window, 'electron', 'mystore2')
 
     const lspService = new LspService(eventEmitter, {
       disableInBuiltTypescriptWorker: true,
