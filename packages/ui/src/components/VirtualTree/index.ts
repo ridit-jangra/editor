@@ -1,5 +1,4 @@
 import { IFolderStructure, Node } from "./types";
-import { cn } from "../../utils/cn";
 import { h } from "../../utils/h";
 import { VirtualList } from "../VirtualList";
 import { ContextMenu, ContextMenuItem } from "../ContextMenu";
@@ -62,6 +61,32 @@ function inject_spinner_style() {
     }
   `;
   document.head.appendChild(style);
+}
+
+const S = {
+  row_active:
+    "background:var(--explorer-item-active-background);color:var(--explorer-item-active-foreground);",
+  row_passive: "color:var(--explorer-foreground);",
+} as const;
+
+function apply_active(el: HTMLElement, active: boolean) {
+  if (active) {
+    el.style.background = "var(--explorer-item-active-background)";
+    el.style.color = "var(--explorer-item-active-foreground)";
+    el.onmouseenter = null;
+    el.onmouseleave = null;
+  } else {
+    el.style.background = "";
+    el.style.color = "var(--explorer-foreground)";
+    el.onmouseenter = () => {
+      el.style.background = "var(--explorer-item-hover-background)";
+      el.style.color = "var(--explorer-item-hover-foreground)";
+    };
+    el.onmouseleave = () => {
+      el.style.background = "";
+      el.style.color = "var(--explorer-foreground)";
+    };
+  }
 }
 
 export function VirtualTree(
@@ -152,23 +177,10 @@ export function VirtualTree(
     }
   };
 
-  const active_cls =
-    "bg-explorer-item-active-background text-explorer-item-active-foreground";
-  const passive_cls =
-    "text-explorer-foreground hover:bg-explorer-item-hover-background hover:text-explorer-item-hover-foreground";
-  const active_cls_list = active_cls.split(" ");
-  const passive_cls_list = passive_cls.split(" ");
-
   let prev_active_el: HTMLElement | null = null;
 
   const set_row_active = (el: HTMLElement, active: boolean) => {
-    if (active) {
-      passive_cls_list.forEach((c) => el.classList.remove(c));
-      active_cls_list.forEach((c) => el.classList.add(c));
-    } else {
-      active_cls_list.forEach((c) => el.classList.remove(c));
-      passive_cls_list.forEach((c) => el.classList.add(c));
-    }
+    apply_active(el, active);
   };
 
   const patch_row_el = (id: string) => {
@@ -222,13 +234,17 @@ export function VirtualTree(
 
     const root_label = h(
       "span",
-      { class: "root-node-label truncate font-normal" },
+      {
+        class: "root-node-label",
+        style:
+          "overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:400;",
+      },
       opts.folderStructure.root.name,
     );
 
     const root_actions = h(
       "div",
-      { class: "flex items-center gap-1" },
+      { style: "display:flex;align-items:center;gap:4px;" },
       Button(lucide("file-plus"), {
         variant: "ghost",
         onClick(e) {
@@ -236,9 +252,7 @@ export function VirtualTree(
           selected.id = norm(opts.folderStructure.path);
           start_add_node(norm(opts.folderStructure.path), "file");
         },
-        tooltip: {
-          text: "New File",
-        },
+        tooltip: { text: "New File" },
       }),
       Button(lucide("folder-plus"), {
         variant: "ghost",
@@ -247,17 +261,16 @@ export function VirtualTree(
           selected.id = norm(opts.folderStructure.path);
           start_add_node(norm(opts.folderStructure.path), "folder");
         },
-        tooltip: {
-          text: "New Folder",
-        },
+        tooltip: { text: "New Folder" },
       }),
     );
 
     root_node_el = h(
       "div",
       {
-        class:
-          "root-node px-2 group flex items-center justify-between text-explorer-foreground select-none",
+        class: "root-node",
+        style:
+          "padding:0 8px;display:flex;align-items:center;justify-content:space-between;color:var(--explorer-foreground);user-select:none;",
       },
       root_label,
       root_actions,
@@ -432,7 +445,6 @@ export function VirtualTree(
           onClick: () => {
             selected.id = row.id;
             list.refresh();
-            // open_editor_tab(row.node.path);
           },
         },
         { type: "separator" },
@@ -492,7 +504,8 @@ export function VirtualTree(
   const is_active = (id: string) => uris_equal(id, selected.id);
 
   const scroll = ScrollArea({
-    class: "flex flex-col overflow-hidden h-full px-2",
+    // style:
+    //   "display:flex;flex-direction:column;overflow:hidden;height:100%;padding:0 8px;",
   });
   const el = scroll.el;
 
@@ -568,7 +581,7 @@ export function VirtualTree(
     items: rows,
     itemHeight: opts.rowHeight,
     height: opts.height,
-    class: cn("min-h-0 min-w-0 overflow-hidden", opts.class),
+    // style: "min-height:0;min-width:0;overflow:hidden;",
     overscan: 8,
     cache: false,
     scrollViewport: scroll.viewport,
@@ -632,9 +645,6 @@ export function VirtualTree(
             rebuild();
             try {
               await fileSystemService.rename(old_uri, new_uri);
-              // const editor = editors_registry[get_file_extension(new_uri)];
-              // if (!editor) return;
-              // editor.update_model_uri(old_uri, new_uri);
             } catch (e) {
               console.error("[rename] failed:", e);
             }
@@ -654,53 +664,59 @@ export function VirtualTree(
         row.node.type === "folder" &&
         (() => {
           const span = h("span", {
-            class:
-              "mr-1 opacity-70 inline-flex items-center [&_svg]:w-4 [&_svg]:h-4",
             "data-caret": "1",
             "data-loading": is_loading ? "1" : "0",
-            style: `display:inline-flex;align-items:center;transform:rotate(${is_open ? "90deg" : "0deg"});`,
+            style: [
+              "display:inline-flex;align-items:center;margin-right:4px;opacity:0.7;",
+              `transform:rotate(${is_open ? "90deg" : "0deg"});`,
+              is_loading
+                ? "animation:vt-spin 1s linear infinite;transition:none;"
+                : "",
+            ].join(""),
           });
 
-          if (is_loading) {
-            span.style.animation = "vt-spin 1s linear infinite";
-            span.style.transition = "none";
-          }
-
-          span.appendChild(
-            lucide(is_loading ? "loader-circle" : "chevron-right"),
-          );
+          const icon = lucide(is_loading ? "loader-circle" : "chevron-right");
+          icon.style.width = "16px";
+          icon.style.height = "16px";
+          span.appendChild(icon);
           return span;
         })();
 
       const file_icon =
-        row.node.type !== "folder" && h("img", { class: "w-4 h-4 mr-1" });
+        row.node.type !== "folder" &&
+        h("img", { style: "width:16px;height:16px;margin-right:4px;" });
       if (file_icon && opts.get_icon && opts.icon_folder_name)
-        file_icon.src = `./${opts.icon_folder_name}/${opts.get_icon(row.id)}`;
+        (file_icon as HTMLImageElement).src =
+          `./${opts.icon_folder_name}/${opts.get_icon(row.id)}`;
 
       const left = h(
         "div",
-        { class: "ml-2 flex items-center min-w-0" },
+        {
+          style: "margin-left:8px;display:flex;align-items:center;min-width:0;",
+        },
         caret,
         file_icon,
-        h("span", { class: "truncate font-normal" }, row.label),
+        h(
+          "span",
+          {
+            style:
+              "overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:400;",
+          },
+          row.label,
+        ),
       );
 
       const right = opts.renderRight ? opts.renderRight(row) : null;
-
-      const active_cls =
-        "bg-explorer-item-active-background text-explorer-item-active-foreground";
-      const passive_cls =
-        "text-explorer-foreground hover:bg-explorer-item-hover-background hover:text-explorer-item-hover-foreground";
 
       const row_el = h(
         "div",
         {
           "data-row-id": row.id,
-          class: cn(
-            "relative flex items-center justify-between select-none cursor-pointer text-[12.5px] rounded-[7px]",
-            active ? active_cls : passive_cls,
-          ),
-          style: `padding-left:${row.depth * 1.4}rem`,
+          style: [
+            "position:relative;display:flex;align-items:center;justify-content:space-between;",
+            "user-select:none;cursor:pointer;font-size:12.5px;border-radius:7px;",
+            `padding-left:${row.depth * 1.4}rem;`,
+          ].join(""),
           on: {
             click: (e: MouseEvent) => {
               if (e.button !== 0) return;
@@ -723,9 +739,10 @@ export function VirtualTree(
         right ?? "",
       );
 
+      apply_active(row_el, active);
+
       row_el.oncontextmenu = async () => {
         selected.id = norm(row.id);
-        // await expand_to(row.id);
         rebuild();
         requestAnimationFrame(() => scroll_to_id(norm(row.id)));
       };

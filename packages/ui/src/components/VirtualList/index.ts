@@ -1,4 +1,3 @@
-import { cn } from "../../utils/cn";
 import { h } from "../../utils/h";
 
 export type VirtualListOpts<T> = {
@@ -19,22 +18,25 @@ export function VirtualList<T>(opts: VirtualListOpts<T>) {
   const overscan = opts.overscan ?? 6;
   const shouldCache = opts.cache ?? false;
 
+  const viewportStyle = [
+    "min-height:0;min-width:0;overflow:auto;position:relative;",
+    typeof opts.height === "number"
+      ? `height:${opts.height}px;`
+      : opts.height
+        ? `height:${opts.height};`
+        : "",
+  ].join("");
+
   const viewport =
     opts.scrollViewport ??
     h("div", {
-      class: cn("min-h-0 min-w-0 overflow-auto relative", opts.class),
-      style:
-        typeof opts.height === "number"
-          ? `height:${opts.height}px;`
-          : opts.height
-            ? `height:${opts.height};`
-            : "",
+      style: viewportStyle,
     });
 
-  const inner = h("div", { class: cn("relative w-full", opts.innerClass) });
-  const spacer = h("div", { class: "w-full", style: "height:0px;" });
+  const inner = h("div", { style: "position:relative;width:100%;" });
+  const spacer = h("div", { style: "width:100%;height:0px;" });
   const layer = h("div", {
-    class: "absolute left-0 top-0 w-full will-change-transform",
+    style: "position:absolute;left:0;top:0;width:100%;will-change:transform;",
   });
 
   inner.appendChild(spacer);
