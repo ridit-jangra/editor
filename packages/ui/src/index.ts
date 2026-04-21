@@ -3,3 +3,7 @@ export { cn } from "./utils/cn";
 export { Button } from "./components/Button/index";
 export { Tooltip } from "./components/Tooltip/index";
 export { Splitter } from "./components/Splitter/splitter";
+export { VirtualTree } from "./components/VirtualTree/index";
+export { VirtualList } from "./components/VirtualList/index";
+export { ScrollArea } from "./components/ScrollArea/index";
+export { ContextMenu } from "./components/ContextMenu/index";
