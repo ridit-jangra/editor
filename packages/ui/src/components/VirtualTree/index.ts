@@ -1,4 +1,4 @@
-import { IFolderStructure, INode } from "./types";
+import { IFolderStructure, Node } from "./types";
 import { cn } from "../../utils/cn";
 import { h } from "../../utils/h";
 import { VirtualList } from "../VirtualList";
@@ -10,9 +10,9 @@ import {
   rename_by_path,
   remove_node_by_path,
   add_node,
-} from "./utils/virtual-tree.helpers";
-import { create_add_node_input } from "./utils/add-node.helpers";
-import { create_rename_input } from "./utils/rename-node.helpers";
+} from "./utils/helpers";
+import { create_add_node_input } from "./utils/addNode";
+import { create_rename_input } from "./utils/renameNode";
 import {
   norm,
   uris_equal,
@@ -25,28 +25,27 @@ import { Button } from "../Button";
 import { lucide } from "../../utils/icon";
 import type { FileSystemService } from "../../../../services/src/FileSystemService";
 
-function deep_clone_nodes(nodes: INode[]): INode[] {
+function deep_clone_nodes(nodes: Node[]): Node[] {
   return nodes.map((n) => ({
     ...n,
     id: norm(n.id),
     path: norm(n.path),
-    child_nodes: n.child_nodes ? deep_clone_nodes(n.child_nodes) : [],
+    child_nodes: n.child ? deep_clone_nodes(n.child) : [],
   }));
 }
 
 function update_node_in_structure(
-  nodes: INode[],
+  nodes: Node[],
   id: string,
-  child_nodes: INode[],
+  child_nodes: Node[],
 ): boolean {
   for (const node of nodes) {
     if (node.id === id) {
-      node.child_nodes = child_nodes;
+      node.child = child_nodes;
       return true;
     }
-    if (node.child_nodes && node.child_nodes.length > 0) {
-      if (update_node_in_structure(node.child_nodes, id, child_nodes))
-        return true;
+    if (node.child && node.child.length > 0) {
+      if (update_node_in_structure(node.child, id, child_nodes)) return true;
     }
   }
   return false;
@@ -74,7 +73,7 @@ export function VirtualTree(
     indent?: number;
     initiallyOpenAll?: boolean;
     initialOpenFolders?: string[];
-    onSelect?: (id: string, node: INode) => void;
+    onSelect?: (id: string, node: Node) => void;
     onOpenFoldersChange?: (open_folders: string[]) => void;
     renderRight?: (row: FlatRow) => HTMLElement | null;
     get_icon?: (name: string) => string;
@@ -100,9 +99,9 @@ export function VirtualTree(
     structure: deep_clone_nodes(opts.folderStructure.structure),
   };
 
-  const init_open = (n: INode) => {
+  const init_open = (n: Node) => {
     if (opts.initiallyOpenAll) open.add(n.id);
-    (n.child_nodes ?? []).forEach(init_open);
+    (n.child ?? []).forEach(init_open);
   };
   opts.folderStructure.structure.forEach(init_open);
 
@@ -277,7 +276,7 @@ export function VirtualTree(
     list.update_rows(rows);
   };
 
-  const load_children = (folder_node: INode): Promise<void> => {
+  const load_children = (folder_node: Node): Promise<void> => {
     if (loaded.has(folder_node.id)) return Promise.resolve();
 
     const existing = load_queue.get(folder_node.id);
@@ -286,12 +285,10 @@ export function VirtualTree(
     const promise = new Promise<void>((resolve) => {
       setTimeout(async () => {
         try {
-          const raw = (await fileSystemService.readdir(
-            folder_node.path,
-          )) as any;
+          const raw = await fileSystemService.readTree(folder_node.path);
 
           let result_id: string;
-          let child_nodes: INode[];
+          let child_nodes: Node[];
 
           if (Array.isArray(raw)) {
             result_id = folder_node.id;
@@ -398,7 +395,7 @@ export function VirtualTree(
       id: editing_node_id,
       label: "",
       depth: parent_depth + 1,
-      node: { id: editing_node_id, type, name: "", path: "" } as INode,
+      node: { id: editing_node_id, type, name: "", path: "" } as Node,
     };
 
     const new_rows = [...rows];
@@ -420,7 +417,7 @@ export function VirtualTree(
     if (!confirm(`Are you sure you want to delete this ${type}?`)) return;
 
     try {
-      // await explorer.actions.delete_file(result.node.path);
+      await fileSystemService.rm(result.node.path);
     } catch {}
   };
 
@@ -819,11 +816,11 @@ export function VirtualTree(
       }
       selected.id = "";
     },
-    mutate(fn: (nodes: INode[]) => void) {
+    mutate(fn: (nodes: Node[]) => void) {
       fn(opts.folderStructure.structure);
       rebuild();
     },
-    add(node: INode) {
+    add(node: Node) {
       add_node(opts.folderStructure.structure, node, opts.folderStructure.path);
       rebuild_debounced();
     },

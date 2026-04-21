@@ -1,10 +1,6 @@
-export interface INode {
-  id: string;
-  type: "file" | "folder";
-  name: string;
-  path: string;
-  child_nodes: INode[];
-}
+import { Node } from "../../../../services/src/VirtualFileSystemService";
+
+export type { Node };
 
 export interface IRootNode {
   name: string;
@@ -13,13 +9,13 @@ export interface IRootNode {
 export interface IFolderStructure {
   root: IRootNode;
   path: string;
-  structure: INode[];
+  structure: Node[];
 }
 
 export interface IChildStructure {
   path: string;
   id: string;
-  child_nodes: INode[];
+  child_nodes: Node[];
 }
 
 export type TWatchEvent =

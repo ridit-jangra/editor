@@ -1,20 +1,13 @@
-import { INode } from "../../../../../shared/types/explorer.types";
-import { h } from "../../contrib/core/dom/h";
-import { cn } from "../../contrib/core/utils/cn";
-import { lucide } from "../../browser/parts/components/icon";
-import {
-  rename_node,
-  name_exists_in_folder,
-  find_node_by_id,
-} from "./virtual-tree.helpers";
-import {
-  generate_child_uri,
-  get_parent_uri,
-} from "../../../../../shared/uri/generate";
+import { cn } from "../../../utils/cn";
+import { h } from "../../../utils/h";
+import { lucide } from "../../../utils/icon";
+import { rename_node, name_exists_in_folder, find_node_by_id } from "./helpers";
+import { generate_child_uri, get_parent_uri } from "./uri";
+import { Node } from "../types";
 
 export type rename_node_options = {
   nodeId: string;
-  nodes: INode[];
+  nodes: Node[];
   indent: number;
   depth: number;
   currentName: string;

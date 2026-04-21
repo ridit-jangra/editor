@@ -1,24 +1,22 @@
-import { INode } from "../../../../../shared/types/explorer.types";
-import { get_file_icon } from "../../../platform/explorer/explorer.helper";
-import { h } from "../../contrib/core/dom/h";
-import { cn } from "../../contrib/core/utils/cn";
-
-import { lucide } from "../../browser/parts/components/icon";
+import { cn } from "../../../utils/cn";
+import { h } from "../../../utils/h";
+import { lucide } from "../../../utils/icon";
+import { Node } from "../types";
 import {
   add_node_to_parent,
   generate_node_id,
   name_exists_in_folder,
-} from "./virtual-tree.helpers";
+} from "./helpers";
 
 export type AddNodeOptions = {
   type: "file" | "folder";
   parentId: string;
   parentPath: string;
   name: string;
-  nodes: INode[];
+  nodes: Node[];
   indent: number;
   depth: number;
-  onComplete: (newNode: INode) => void;
+  onComplete: (newNode: Node) => void;
   onCancel: () => void;
 };
 
@@ -47,7 +45,7 @@ export function create_add_node_input(opts: AddNodeOptions): HTMLElement {
     );
   } else {
     icon = h("img", { class: "ml-2 w-4 h-4 mr-1" }) as HTMLImageElement;
-    (icon as HTMLImageElement).src = `./file-icons/${get_file_icon(opts.name)}`;
+    (icon as HTMLImageElement).src = `./file-icons/${opts.name}`;
   }
 
   const container = h(
@@ -74,12 +72,12 @@ export function create_add_node_input(opts: AddNodeOptions): HTMLElement {
     }
 
     const newId = generate_node_id(parentPath, name);
-    const newNode: INode = {
+    const newNode: Node = {
       id: newId,
       type,
       name,
       path: newId,
-      child_nodes: [],
+      child: [],
     };
 
     onComplete(newNode);
@@ -106,7 +104,7 @@ export function create_add_node_input(opts: AddNodeOptions): HTMLElement {
   input.oninput = (e) => {
     if (type === "file") {
       const v = (e.currentTarget as HTMLInputElement).value;
-      (icon as HTMLImageElement).src = `./file-icons/${get_file_icon(v)}`;
+      (icon as HTMLImageElement).src = `./file-icons/${v}`;
     }
   };
 
@@ -122,22 +120,22 @@ export function create_add_node_input(opts: AddNodeOptions): HTMLElement {
 }
 
 export function add_file(
-  nodes: INode[],
+  nodes: Node[],
   parentId: string,
   parentPath: string,
   fileName: string,
-): INode | null {
+): Node | null {
   if (name_exists_in_folder(nodes, parentId, fileName)) {
     return null;
   }
 
   const newId = generate_node_id(parentPath, fileName);
-  const newNode: INode = {
+  const newNode: Node = {
     id: newId,
     type: "file",
     name: fileName,
     path: newId,
-    child_nodes: [],
+    child: [],
   };
 
   const success = add_node_to_parent(nodes, parentId, newNode);
@@ -145,22 +143,22 @@ export function add_file(
 }
 
 export function addFolder(
-  nodes: INode[],
+  nodes: Node[],
   parentId: string,
   parentPath: string,
   folderName: string,
-): INode | null {
+): Node | null {
   if (name_exists_in_folder(nodes, parentId, folderName)) {
     return null;
   }
 
   const newId = generate_node_id(parentPath, folderName);
-  const newNode: INode = {
+  const newNode: Node = {
     id: newId,
     type: "folder",
     name: folderName,
     path: newId,
-    child_nodes: [],
+    child: [],
   };
 
   const success = add_node_to_parent(nodes, parentId, newNode);
