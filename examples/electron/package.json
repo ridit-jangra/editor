@@ -26,6 +26,7 @@
     "@ridit/editor-services": "workspace:*",
     "@ridit/editor-ui": "workspace:*",
     "bufferutil": "^4.1.0",
+    "lucide-static": "^1.8.0",
     "ws": "^8.20.0"
   },
   "devDependencies": {
