@@ -16,6 +16,7 @@ import {
   EXPLORER_GET_ROOT_STRUCTURE,
   STORAGE_GET,
   STORAGE_SET,
+  STORAGE_CREATE_IF_NOT_EXISTS,
 } from "../channels";
 import type { IpcRenderer, contextBridge as contextBridgeType } from "electron";
 
@@ -68,11 +69,14 @@ export class PreloadService extends Service {
     };
 
     const storageBridge = {
-      set: (key: string, value: any) => {
-        return ipcRenderer.invoke(STORAGE_SET, key, value);
+      set: (key: string, value: any, storeName: string) => {
+        return ipcRenderer.invoke(STORAGE_SET, key, value, storeName);
       },
-      get: (key: string) => {
-        return ipcRenderer.invoke(STORAGE_GET, key);
+      get: (key: string, storeName: string) => {
+        return ipcRenderer.invoke(STORAGE_GET, key, storeName);
+      },
+      createStoreIfNotExist: (storeName: string) => {
+        return ipcRenderer.invoke(STORAGE_CREATE_IF_NOT_EXISTS, storeName);
       },
     };
 
