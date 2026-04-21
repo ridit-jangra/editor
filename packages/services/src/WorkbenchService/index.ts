@@ -140,8 +140,10 @@ export class WorkbenchService extends Service {
     const savedSizes = await (async () => {
       try {
         const result = await this.storageService.get("WorkbenchMainSplitter");
+
         return result ?? null;
-      } catch {
+      } catch (e) {
+        console.error(`[WorkbenchService]: ${e}`);
         return null;
       }
     })();
@@ -184,7 +186,7 @@ export class WorkbenchService extends Service {
 
     root.appendChild(middle);
 
-    const statusbar = new StatusbarComponent(this.classes);
+    const statusbar = new StatusbarComponent(this.eventEmitter, this.classes);
     root.appendChild(statusbar.render(document));
 
     document.body.appendChild(root);
