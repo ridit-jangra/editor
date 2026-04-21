@@ -38,6 +38,12 @@ export class RealFileSystemService extends Service implements IFileSystem {
   readdir(path: string) {
     return this.window.fs.readdir(path);
   }
+  readTree(path: string) {
+    return this.window.fs.readTree(path);
+  }
+  getRootStructure(path: string) {
+    return this.window.fs.getRootStructure(path);
+  }
   // readBase64(path: string) {
   //   return this.window.fs.readBase64(path);
   // }
