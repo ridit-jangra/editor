@@ -1,6 +1,3 @@
-import { cn } from "../../utils/cn";
-import { h } from "../../utils/h";
-
 export interface TooltipProps {
   text?: string;
   content?: HTMLElement;
@@ -12,14 +9,24 @@ export interface TooltipProps {
 }
 
 export function Tooltip(opts: TooltipProps) {
-  const tip = h("div", {
-    class: cn(
-      "fixed z-[9999] hidden px-2 py-px text-[12.5px] ",
-      "text-tooltip-foreground min-w-max border border-tooltip-border rounded-full",
-      "animate-in fade-in zoom-in-95 duration-150",
+  const tip = document.createElement("div");
 
-      opts.class,
-    ),
+  // base styles
+  Object.assign(tip.style, {
+    position: "fixed",
+    zIndex: "9999",
+    display: "none",
+    padding: "2px 8px",
+    fontSize: "12.5px",
+    borderRadius: "999px",
+    border: "1px solid #3a3a3a",
+    background: "#1e1e1e",
+    color: "#e5e5e5",
+    whiteSpace: "nowrap",
+    pointerEvents: "auto",
+    transform: "scale(0.95)",
+    opacity: "0",
+    transition: "opacity 0.15s ease, transform 0.15s ease",
   });
 
   if (opts.content) {
@@ -33,17 +40,32 @@ export function Tooltip(opts: TooltipProps) {
   let showTimeout: number | null = null;
   let hideTimeout: number | null = null;
 
+  const showAnimation = () => {
+    tip.style.display = "block";
+    requestAnimationFrame(() => {
+      tip.style.opacity = "1";
+      tip.style.transform = "scale(1)";
+    });
+  };
+
+  const hideAnimation = () => {
+    tip.style.opacity = "0";
+    tip.style.transform = "scale(0.95)";
+    setTimeout(() => {
+      tip.style.display = "none";
+    }, 150);
+  };
+
   const hide = () => {
     if (showTimeout !== null) {
       window.clearTimeout(showTimeout);
       showTimeout = null;
     }
+
     if (opts.hide_delay) {
-      hideTimeout = window.setTimeout(() => {
-        tip.style.display = "none";
-      }, opts.hide_delay);
+      hideTimeout = window.setTimeout(hideAnimation, opts.hide_delay);
     } else {
-      tip.style.display = "none";
+      hideAnimation();
     }
   };
 
@@ -62,7 +84,8 @@ export function Tooltip(opts: TooltipProps) {
 
     const rect = opts.child.getBoundingClientRect();
 
-    tip.style.display = "block";
+    showAnimation();
+
     const tipRect = tip.getBoundingClientRect();
 
     const gap = 6;
@@ -77,17 +100,11 @@ export function Tooltip(opts: TooltipProps) {
       const spaceLeft = rect.left;
       const spaceRight = viewportWidth - rect.right;
 
-      if (spaceBelow >= tipRect.height + gap) {
-        position = "bottom";
-      } else if (spaceAbove >= tipRect.height + gap) {
-        position = "top";
-      } else if (spaceRight >= tipRect.width + gap) {
-        position = "right";
-      } else if (spaceLeft >= tipRect.width + gap) {
-        position = "left";
-      } else {
-        position = "bottom";
-      }
+      if (spaceBelow >= tipRect.height + gap) position = "bottom";
+      else if (spaceAbove >= tipRect.height + gap) position = "top";
+      else if (spaceRight >= tipRect.width + gap) position = "right";
+      else if (spaceLeft >= tipRect.width + gap) position = "left";
+      else position = "bottom";
     }
 
     let left = 0;
@@ -125,7 +142,7 @@ export function Tooltip(opts: TooltipProps) {
   const handleMouseEnter = () => {
     cancel_hide();
     if (opts.delay) {
-      showTimeout = window.setTimeout(() => show(), opts.delay);
+      showTimeout = window.setTimeout(show, opts.delay);
     } else {
       show();
     }
@@ -157,19 +174,20 @@ export function Tooltip(opts: TooltipProps) {
     },
     update_content(content: HTMLElement) {
       tip.innerHTML = "";
-
       tip.appendChild(content);
     },
     destroy() {
       if (showTimeout !== null) window.clearTimeout(showTimeout);
       if (hideTimeout !== null) window.clearTimeout(hideTimeout);
-      opts.child.addEventListener("mouseenter", handleMouseEnter);
-      opts.child.addEventListener("mouseleave", hide);
-      opts.child.addEventListener("blur", hide);
-      opts.child.addEventListener("mousedown", hide);
 
-      tip.addEventListener("mouseenter", cancel_hide);
-      tip.addEventListener("mouseleave", hide);
+      opts.child.removeEventListener("mouseenter", handleMouseEnter);
+      opts.child.removeEventListener("mouseleave", hide);
+      opts.child.removeEventListener("blur", hide);
+      opts.child.removeEventListener("mousedown", hide);
+
+      tip.removeEventListener("mouseenter", cancel_hide);
+      tip.removeEventListener("mouseleave", hide);
+
       observer.disconnect();
       tip.remove();
     },
