@@ -4,12 +4,17 @@ import css_worker from "monaco-editor/esm/vs/language/css/css.worker?worker";
 import html_worker from "monaco-editor/esm/vs/language/html/html.worker?worker";
 import ts_worker from "monaco-editor/esm/vs/language/typescript/ts.worker?worker";
 
+import { StandaloneServices } from "monaco-editor/esm/vs/editor/standalone/browser/standaloneServices?internal";
+import { ITextModelService } from "monaco-editor/esm/vs/editor/common/services/resolverService?internal";
 import * as monaco from "monaco-editor";
 import { Service } from "../service";
 import { path_to_language } from "./utils";
 import { EventEmitter } from "../emitter";
 import { LspService } from "../LspService";
 import { FileSystemService } from "../FileSystemService";
+import { normalize } from "../VirtualFileSystemService";
+import { ExplorerService } from "../ExplorerService";
+import { StorageService } from "../StorageService";
 
 export type EditorOptions = monaco.editor.IStandaloneEditorConstructionOptions;
 
@@ -18,6 +23,8 @@ export type EditorDomElement = HTMLElement | string;
 export type EditorServiceOptions = {
   LspService?: LspService;
   fileSystem: FileSystemService;
+  storageService: StorageService;
+  explorerService: ExplorerService;
   editorConfig?: EditorOptions;
   theme?: "Dark" | "Light";
 };
@@ -29,18 +36,26 @@ export class EditorService extends Service {
   private lspServer: LspService | undefined = undefined;
   private editorConfig: EditorOptions | undefined = undefined;
   private fileSystem: FileSystemService;
+  private explorerService: ExplorerService;
   private window: any;
   private theme: "Dark" | "Light" | undefined = undefined;
 
   constructor(
     private eventEmiiter: EventEmitter,
-    { LspService, editorConfig, fileSystem, theme }: EditorServiceOptions,
+    {
+      LspService,
+      editorConfig,
+      fileSystem,
+      theme,
+      explorerService,
+    }: EditorServiceOptions,
   ) {
     super("EditorService");
 
     this.lspServer = LspService;
     this.editorConfig = editorConfig;
     this.fileSystem = fileSystem;
+    this.explorerService = explorerService;
     this.theme = theme;
   }
 
@@ -107,6 +122,168 @@ export class EditorService extends Service {
       ...this.editorConfig,
     });
 
+    monaco.languages.typescript.typescriptDefaults.setEagerModelSync(false);
+    monaco.languages.typescript.typescriptDefaults.setMaximumWorkerIdleTime(-1);
+    monaco.languages.typescript.javascriptDefaults.setMaximumWorkerIdleTime(-1);
+    monaco.languages.typescript.typescriptDefaults.setDiagnosticsOptions({
+      noSemanticValidation: true,
+      noSyntaxValidation: true,
+      noSuggestionDiagnostics: true,
+    });
+    monaco.languages.typescript.javascriptDefaults.setDiagnosticsOptions({
+      noSemanticValidation: true,
+      noSyntaxValidation: true,
+      noSuggestionDiagnostics: true,
+    });
+    monaco.languages.typescript.typescriptDefaults.setCompilerOptions({
+      noLib: true,
+      allowNonTsExtensions: true,
+      noSuggestionDiagnostics: true,
+    });
+    monaco.languages.typescript.javascriptDefaults.setCompilerOptions({
+      noLib: true,
+      allowNonTsExtensions: true,
+      noSuggestionDiagnostics: true,
+    });
+    (monaco.languages.typescript as any).typescriptDefaults._onDidChange.fire();
+    monaco.languages.registerCompletionItemProvider("typescript", {
+      provideCompletionItems: () => ({ suggestions: [] }),
+    });
+
+    try {
+      const svc = StandaloneServices.get(ITextModelService) as any;
+
+      if (!svc) {
+        return;
+      }
+
+      if (svc.__meridia_patched) {
+        return;
+      }
+
+      svc.__meridia_patched = true;
+      const original = svc.createModelReference.bind(svc);
+
+      svc.createModelReference = async (resource: monaco.Uri) => {
+        if (!monaco.editor.getModel(resource)) {
+          try {
+            const fsPath =
+              resource.fsPath ||
+              decodeURIComponent(resource.path).replace(/^\//, "");
+
+            const content = await this.fileSystem.readFile(fsPath);
+            monaco.editor.createModel(
+              content,
+              path_to_language(fsPath, monaco),
+              resource,
+            );
+          } catch (e) {}
+        }
+        return original(resource);
+      };
+    } catch (e) {}
+
+    async function get_or_create_model(
+      path: string,
+      fileSystem: FileSystemService,
+    ): Promise<monaco.editor.ITextModel> {
+      const uri = monaco.Uri.file(path);
+      let model = monaco.editor.getModel(uri);
+
+      if (!model) {
+        const content = await fileSystem.readFile(path);
+
+        model = monaco.editor.createModel(content, undefined, uri);
+      }
+
+      return model;
+    }
+
+    function resolve_file_uri(url: string, workspace_path: string): string {
+      let path = url.replace(/^file:\/\/\/?/, "");
+
+      path = path.replace(/\\/g, "/");
+      workspace_path = workspace_path.replace(/\\/g, "/");
+
+      if (
+        path.startsWith("./") ||
+        path.startsWith("../") ||
+        !path.startsWith("/")
+      ) {
+        const base = workspace_path.replace(/\/+$/, "");
+        const parts = base.split("/");
+        const rel_parts = path.replace(/^\.\//, "").split("/");
+
+        for (const part of rel_parts) {
+          if (part === "..") parts.pop();
+          else if (part !== ".") parts.push(part);
+        }
+
+        return parts.join("/");
+      }
+
+      return path;
+    }
+
+    monaco.editor.registerLinkOpener({
+      open: async (resource) => {
+        const url = resource.toString();
+
+        if (url.startsWith("file://")) {
+          const tree = this.explorerService.structure!;
+
+          if (!tree) {
+            const model = await this.create_model(url);
+            await this.set_model_active(model.uri);
+            return true;
+          }
+
+          const resolved = resolve_file_uri(url, tree.path);
+          const model = await this.create_model(resolved);
+          await this.set_model_active(model.uri);
+          return true;
+        }
+
+        if (url.startsWith("http://") || url.startsWith("https://")) {
+          // window.shell.open_external(url);
+          return true;
+        }
+
+        return false;
+      },
+    });
+
+    const fileSystem = this.fileSystem;
+
+    monaco.editor.registerEditorOpener({
+      openCodeEditor: async (_, resource, selectionOrPosition) => {
+        const path = resource.fsPath;
+
+        const model = await get_or_create_model(path, fileSystem);
+
+        await this.set_model_active(model.uri.fsPath);
+
+        if (selectionOrPosition) {
+          setTimeout(() => {
+            const editor = monaco.editor
+              .getEditors()
+              .find((e) => e.getModel() === model);
+            if (!editor) return;
+
+            if ("lineNumber" in selectionOrPosition) {
+              editor.setPosition(selectionOrPosition);
+              editor.revealPositionInCenter(selectionOrPosition);
+            } else {
+              editor.setSelection(selectionOrPosition);
+              editor.revealRangeInCenter(selectionOrPosition);
+            }
+          }, 50);
+        }
+
+        return true;
+      },
+    });
+
     if (this.lspServer)
       this.lspServer.start(window, this.window.monaco, this.editor);
   }
@@ -131,7 +308,7 @@ export class EditorService extends Service {
   }
 
   public async create_model(file_path: string) {
-    const uri = monaco.Uri.file(file_path);
+    const uri = monaco.Uri.file(normalize(file_path));
     const content = (await this.fileSystem.readFile(file_path)) ?? "";
 
     const existing = monaco.editor.getModel(uri);
@@ -142,7 +319,7 @@ export class EditorService extends Service {
         path_to_language(file_path, monaco),
         uri,
       );
-    if (existing && existing.getValue() !== content) existing.setValue(content);
+    // if (existing && existing.getValue() !== content) existing.setValue(content);
 
     const entry = {
       uri: file_path,
