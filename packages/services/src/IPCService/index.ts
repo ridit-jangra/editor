@@ -22,8 +22,82 @@ import {
   LSP_START_SERVER,
   LSP_REGISTER_SERVER,
   LSP_STOP_SERVER,
+  EXPLORER_GET_ROOT_STRUCTURE,
+  EXPLORER_GET_CHILD_STRUCTURE,
+  STORAGE_GET,
+  STORAGE_SET,
 } from "../channels";
 import { resolve_pylsp, resolve_python } from "../LspService/utils";
+import { IFolderStructure } from "../../../ui/src/components/VirtualTree/types";
+import { Node } from "../VirtualFileSystemService";
+import { StorageService } from "./storage";
+
+async function get_root_structure(
+  folder_path: string,
+): Promise<IFolderStructure> {
+  try {
+    const entries = fs.readdirSync(folder_path, {
+      withFileTypes: true,
+      recursive: false,
+    });
+
+    const structure: Node[] = [];
+
+    for (const entry of entries) {
+      const full_path = path.join(folder_path, entry.name);
+
+      structure.push({
+        id: full_path,
+        type: entry.isDirectory() ? "folder" : "file",
+        name: entry.name,
+        path: full_path,
+        child: [],
+      });
+    }
+
+    return {
+      root: { name: path.basename(folder_path) },
+      path: folder_path,
+      structure,
+    };
+  } catch {
+    return {
+      root: { name: path.basename(folder_path) },
+      path: folder_path,
+      structure: [],
+    };
+  }
+}
+
+async function get_child_structure(node: Node): Promise<Node[]> {
+  if (node.type !== "folder") return [];
+
+  try {
+    const entries = fs.readdirSync(node.path, {
+      withFileTypes: true,
+      recursive: false,
+    });
+
+    const child_nodes: Node[] = [];
+
+    for (const entry of entries) {
+      const full_path = path.join(node.path, entry.name);
+
+      child_nodes.push({
+        id: full_path,
+        type: entry.isDirectory() ? "folder" : "file",
+        name: entry.name,
+        path: full_path,
+        // child_nodes: [],
+        child: [],
+      });
+    }
+
+    return child_nodes;
+  } catch {
+    return [];
+  }
+}
 
 export type IPCServiceOptions = {};
 
@@ -38,6 +112,7 @@ export class IPCService extends Service {
 
   override start(ipc: typeof ipcMain): void {
     const lspServer = new Server();
+    const storage = new StorageService();
     let isLspServerStarted = false;
 
     lspServer.register({
@@ -134,6 +209,23 @@ export class IPCService extends Service {
 
     ipc.handle(LSP_STOP_SERVER, () => {
       return lspServer.stop();
+    });
+
+    ipc.handle(EXPLORER_GET_ROOT_STRUCTURE, async (_, folder_path: string) => {
+      return await get_root_structure(folder_path);
+    });
+
+    ipc.handle(EXPLORER_GET_CHILD_STRUCTURE, async (_, node: Node) => {
+      return await get_child_structure(node);
+    });
+
+    ipc.handle(STORAGE_GET, (_, key: string, fallback?: any) => {
+      return storage.get(key, fallback);
+    });
+
+    ipc.handle(STORAGE_SET, (_, key: string, value: any) => {
+      storage.set(key, value);
+      return true;
     });
   }
 
