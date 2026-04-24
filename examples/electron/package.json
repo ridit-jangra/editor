@@ -1,5 +1,5 @@
 {
-  "name": "@ridit/editor-electron",
+  "name": "editor-electron-example",
   "version": "1.0.0",
   "description": "A minimal Electron application with TypeScript",
   "main": "./out/main/index.js",
@@ -25,6 +25,7 @@
     "@electron-toolkit/utils": "^4.0.0",
     "@ridit/editor-services": "workspace:*",
     "@ridit/editor-ui": "workspace:*",
+    "@vscode/codicons": "^0.0.45",
     "bufferutil": "^4.1.0",
     "lucide-static": "^1.8.0",
     "ws": "^8.20.0"
