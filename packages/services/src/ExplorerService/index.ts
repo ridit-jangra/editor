@@ -4,27 +4,30 @@ import { Service } from "../service";
 import { VirtualTree } from "../../../ui/src/index";
 import { IFolderStructure } from "../../../ui/src/components/VirtualTree/types";
 
-export type ExplorerOptions = {
+export type ExplorerRequiredServices = {
   fileSystem: FileSystemService;
+};
+
+export type ExplorerOptions = {
+  services: ExplorerRequiredServices;
   rootPath: string;
-  onFileOpen: (path: string) => void;
 };
 
 export class ExplorerService extends Service {
   private fileSystem: FileSystemService;
   private rootPath: string;
-  private onFileOpen: (path: string) => void;
   structure: IFolderStructure | null = null;
 
   constructor(
     private eventEmitter: EventEmitter,
-    { fileSystem, onFileOpen, rootPath }: ExplorerOptions,
+    { services, rootPath }: ExplorerOptions,
   ) {
     super("ExplorerService");
 
-    ((this.fileSystem = fileSystem),
-      (this.rootPath = rootPath),
-      (this.onFileOpen = onFileOpen));
+    const { fileSystem } = services;
+
+    this.fileSystem = fileSystem;
+    this.rootPath = rootPath;
   }
 
   async render(document: any) {
@@ -32,15 +35,13 @@ export class ExplorerService extends Service {
       (await this.fileSystem.getRootStructure(this.rootPath)) ??
       ({ structure: [], path: "", root: { name: "" } } as IFolderStructure);
 
-    const onFileOpen = this.onFileOpen;
-
     const tree = VirtualTree(
       {
         folderStructure: this.structure!,
         rowHeight: 28,
-        onSelect(id, node) {
+        onSelect: (id, node) => {
           if (node.type === "file") {
-            onFileOpen(node.path);
+            this.eventEmitter.emit("editor:openFile", node.path);
           }
         },
       },
