@@ -1,6 +1,6 @@
 import { cn } from "../../utils/cn";
 import { h } from "../../utils/h";
-import { lucide } from "../../utils/icon";
+import { icon } from "../../utils/icon";
 
 export type ContextMenuItem =
   | {
@@ -157,7 +157,7 @@ export function ContextMenu(opts?: {
             },
           },
           h("span", { class: "truncate" }, it.label),
-          h("span", { class: "opacity-70" }, lucide("chevron-right")),
+          h("span", { class: "opacity-70" }, icon("chevron-right")),
         );
         panel.appendChild(row);
         return;
