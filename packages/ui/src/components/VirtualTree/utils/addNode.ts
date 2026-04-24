@@ -1,6 +1,6 @@
 import { cn } from "../../../utils/cn";
 import { h } from "../../../utils/h";
-import { lucide } from "../../../utils/icon";
+import { icon } from "../../../utils/icon";
 import { Node } from "../types";
 import {
   add_node_to_parent,
@@ -38,11 +38,7 @@ export function create_add_node_input(opts: AddNodeOptions): HTMLElement {
 
   let icon: HTMLElement;
   if (type === "folder") {
-    icon = h(
-      "span",
-      { class: "ml-2 opacity-70 mr-1" },
-      lucide("chevron-right"),
-    );
+    icon = h("span", { class: "ml-2 opacity-70 mr-1" }, icon("chevron-right"));
   } else {
     icon = h("img", { class: "ml-2 w-4 h-4 mr-1" }) as HTMLImageElement;
     (icon as HTMLImageElement).src = `./file-icons/${opts.name}`;

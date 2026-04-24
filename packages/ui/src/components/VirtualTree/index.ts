@@ -21,7 +21,7 @@ import {
 } from "./utils/uri";
 import { ScrollArea } from "../ScrollArea";
 import { Button } from "../Button";
-import { lucide } from "../../utils/icon";
+import { icon } from "../../utils/icon";
 import type { FileSystemService } from "../../../../services/src/FileSystemService";
 
 function deep_clone_nodes(nodes: Node[]): Node[] {
@@ -206,7 +206,7 @@ export function VirtualTree(
     if (prev_loading !== is_loading) {
       caret.dataset.loading = is_loading ? "1" : "0";
       caret.innerHTML = "";
-      caret.appendChild(lucide(is_loading ? "loader-circle" : "chevron-right"));
+      caret.appendChild(icon(is_loading ? "loader-circle" : "chevron-right"));
     }
 
     if (is_loading) {
@@ -245,7 +245,7 @@ export function VirtualTree(
     const root_actions = h(
       "div",
       { style: "display:flex;align-items:center;gap:4px;" },
-      Button(lucide("file-plus"), {
+      Button(icon("file-plus"), {
         variant: "ghost",
         onClick(e) {
           e.stopPropagation();
@@ -254,7 +254,7 @@ export function VirtualTree(
         },
         tooltip: { text: "New File" },
       }),
-      Button(lucide("folder-plus"), {
+      Button(icon("folder-plus"), {
         variant: "ghost",
         onClick(e) {
           e.stopPropagation();
@@ -675,10 +675,10 @@ export function VirtualTree(
             ].join(""),
           });
 
-          const icon = lucide(is_loading ? "loader-circle" : "chevron-right");
-          icon.style.width = "16px";
-          icon.style.height = "16px";
-          span.appendChild(icon);
+          const iconEl = icon(is_loading ? "loader-circle" : "chevron-right");
+          iconEl.style.width = "16px";
+          iconEl.style.height = "16px";
+          span.appendChild(iconEl);
           return span;
         })();
 

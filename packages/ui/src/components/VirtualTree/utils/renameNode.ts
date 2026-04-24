@@ -1,6 +1,6 @@
 import { cn } from "../../../utils/cn";
 import { h } from "../../../utils/h";
-import { lucide } from "../../../utils/icon";
+import { icon } from "../../../utils/icon";
 import { rename_node, name_exists_in_folder, find_node_by_id } from "./helpers";
 import { generate_child_uri, get_parent_uri } from "./uri";
 import { Node } from "../types";
@@ -50,7 +50,7 @@ export function create_rename_input(opts: rename_node_options): HTMLElement {
     iconEl = h(
       "span",
       { class: "ml-2 inline-flex items-center [&_svg]:w-4 [&_svg]:h-4" },
-      lucide("chevron-right"),
+      icon("chevron-right"),
     );
   } else {
     iconEl = h("img", { class: "ml-2 w-4 h-4" }) as HTMLImageElement;
