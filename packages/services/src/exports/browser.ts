@@ -6,4 +6,5 @@ export { FileSystemService } from "../FileSystemService/index.ts";
 export { WorkbenchService } from "../WorkbenchService/index";
 export { ExplorerService } from "../ExplorerService/index";
 export { StorageService } from "../StorageService/index";
-export { type ITheme } from "../ThemeService";
+export { TabService } from "../TabService/index.ts";
+export { type ITheme } from "../ThemeService/index.ts";
