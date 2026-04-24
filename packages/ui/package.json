@@ -14,6 +14,7 @@
     "typescript": "^5"
   },
   "dependencies": {
+    "@vscode/codicons": "^0.0.45",
     "lucide-static": "^1.8.0"
   }
 }
