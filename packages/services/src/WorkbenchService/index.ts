@@ -11,6 +11,8 @@ import { ActivityBarComponent } from "./basic-components/Activitybar";
 import { Splitter } from "../../../ui/src/index";
 import { ExplorerService } from "../ExplorerService";
 import { StorageService } from "../StorageService";
+import { TabService } from "../TabService";
+import { TabComponent } from "./basic-components/Tabs";
 
 export type BasicTheme = "Dark" | "Light";
 
@@ -33,11 +35,15 @@ const defaultConfig: WorkbenchConfig = {
   sidebarWidth: 20,
 };
 
-export type WorkbenchOptions = {
+export type WorkbenchRequiredServices = {
   editorService: EditorService;
-  themeService?: ThemeService;
   explorerService: ExplorerService;
   storageService: StorageService;
+  themeService?: ThemeService;
+};
+
+export type WorkbenchOptions = {
+  services: WorkbenchRequiredServices;
   theme?: BasicTheme;
   customTheme?: ITheme;
   classes?: Partial<ComponentClasses>;
@@ -48,6 +54,7 @@ export class WorkbenchService extends Service {
   private editorService: EditorService;
   private explorerService: ExplorerService;
   private storageService: StorageService;
+  private tabService: TabService | null = null;
   private classes: ComponentClasses;
   private theme: ITheme;
   private themeType: BasicTheme;
@@ -59,17 +66,17 @@ export class WorkbenchService extends Service {
   constructor(
     private eventEmitter: EventEmitter,
     {
-      editorService,
-      explorerService,
       classes,
       theme = "Dark",
       customTheme,
-      themeService,
       config,
-      storageService,
+      services,
     }: WorkbenchOptions,
   ) {
     super("WorkbenchService");
+
+    const { editorService, explorerService, storageService, themeService } =
+      services;
 
     this.editorService = editorService;
     this.explorerService = explorerService;
@@ -79,6 +86,7 @@ export class WorkbenchService extends Service {
     this.themeService = themeService
       ? themeService
       : new ThemeService(eventEmitter);
+
     this.config = {
       ...defaultConfig,
       ...config,
@@ -184,6 +192,18 @@ export class WorkbenchService extends Service {
     middle.appendChild(activityBarEl);
     middle.appendChild(this.splitter.el);
 
+    this.tabService = new TabService(this.eventEmitter, {
+      onTabUpdate: (tabs) => {
+        tabComponent.setTabs(tabs);
+      },
+    });
+    this.tabService.start();
+
+    const tabComponent = new TabComponent(this.eventEmitter, this.classes);
+    const tabBarEl = tabComponent.render(document);
+
+    editorAreaEl.prepend(tabBarEl);
+
     root.appendChild(middle);
 
     const statusbar = new StatusbarComponent(this.eventEmitter, this.classes);
@@ -191,12 +211,13 @@ export class WorkbenchService extends Service {
 
     document.body.appendChild(root);
 
-    this.editorService.start(window);
-    await this.editorService.mount(
-      document,
+    const el = editorAreaEl.querySelector(
       `.${this.classes.editorViewport}`,
-      this.themeType,
-    );
+    ) as HTMLDivElement;
+    // `.${this.classes.editorViewport}`,
+
+    this.editorService.start(window);
+    await this.editorService.mount(el, this.tabService);
   }
 
   override stop() {
