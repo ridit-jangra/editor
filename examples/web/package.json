@@ -1,0 +1,19 @@
+{
+  "name": "editor-web-example",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@ridit/editor-services": "workspace:*",
+    "@ridit/editor-ui": "workspace:*"
+  },
+  "devDependencies": {
+    "typescript": "^5.9.3",
+    "vite": "^7.2.6"
+  }
+}
