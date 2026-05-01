@@ -13,7 +13,7 @@ export default defineConfig({
       }
     },
     build: {
-      externalizeDeps: false, // ✅ bundle ALL deps including workspace packages
+      externalizeDeps: false,
       rollupOptions: {
         external: ['electron', /^node:/, 'utf-8-validate', 'bufferutil']
       }
@@ -41,6 +41,7 @@ export default defineConfig({
     }
   },
   renderer: {
+    assetsInclude: ['**/*.ttf'],
     resolve: {
       alias: {
         '@ridit/editor-services/browser': resolve(

@@ -1,4 +1,3 @@
-import { cn } from "../../utils/cn";
 import { h } from "../../utils/h";
 import { icon } from "../../utils/icon";
 
@@ -39,9 +38,9 @@ export function serializeItems(items: ContextMenuItem[]): any[] {
 }
 
 export function ContextMenu(opts?: {
-  class?: string;
-  menuClass?: string;
-  widthClass?: string;
+  rootClass?: string;
+  contentClass?: string;
+  panelClass?: string;
 }) {
   const floating: HTMLDivElement[] = [];
   let closeTimer: number | null = null;
@@ -65,18 +64,13 @@ export function ContextMenu(opts?: {
   };
 
   const root = h("div", {
-    class: cn(
-      "fixed z-[10000] hidden",
-      opts?.menuClass
-        ? ""
-        : "text-context-menu-foreground p-0.5 border border-workbench-border rounded-[14px] shadow-sm",
-      //   GLASS,
-      opts?.menuClass,
-    ),
+    class: ["context-menu-root", opts?.rootClass].filter(Boolean).join(" "),
   }) as HTMLDivElement;
 
   const content = h("div", {
-    class: cn("min-w-[260px]", opts?.widthClass),
+    class: ["context-menu-content", opts?.contentClass]
+      .filter(Boolean)
+      .join(" "),
   });
 
   root.appendChild(content);
@@ -100,12 +94,7 @@ export function ContextMenu(opts?: {
 
   const buildPanel = (items: ContextMenuItem[], floatingPanel = false) => {
     const panel = h("div", {
-      class: cn(
-        "fixed z-[10001] hidden",
-        "bg-context-menu-background text-context-menu-foreground p-1",
-        "border border-workbench-border rounded-[14px] overflow-hidden shadow-sm",
-        opts?.class,
-      ),
+      class: ["context-menu-panel", opts?.panelClass].filter(Boolean).join(" "),
     }) as HTMLDivElement;
 
     if (floatingPanel) {
@@ -130,9 +119,7 @@ export function ContextMenu(opts?: {
 
     items.forEach((it) => {
       if (it.type === "separator") {
-        panel.appendChild(
-          h("div", { class: "my-1 border-t border-workbench-border" }),
-        );
+        panel.appendChild(h("div", { class: "context-menu-separator" }));
         return;
       }
 
@@ -140,12 +127,12 @@ export function ContextMenu(opts?: {
         const row = h(
           "div",
           {
-            class: cn(
-              "flex items-center justify-between px-3 py-1.5 text-[13px] rounded-[14px]",
-              it.disabled ? "opacity-50 pointer-events-none" : "cursor-pointer",
-              "hover:bg-context-menu-item-hover-background hover:text-context-menu-item-hover-foreground",
-              "active:bg-context-item-hover-background",
-            ),
+            class: [
+              "context-menu-row",
+              it.disabled ? "context-menu-row--disabled" : "",
+            ]
+              .filter(Boolean)
+              .join(" "),
             on: {
               mouseenter: () => {
                 cancelClose();
@@ -156,8 +143,12 @@ export function ContextMenu(opts?: {
               },
             },
           },
-          h("span", { class: "truncate" }, it.label),
-          h("span", { class: "opacity-70" }, icon("chevron-right")),
+          h("span", { class: "context-menu-row__label" }, it.label),
+          h(
+            "span",
+            { class: "context-menu-row__chevron" },
+            icon("chevron-right"),
+          ),
         );
         panel.appendChild(row);
         return;
@@ -166,12 +157,12 @@ export function ContextMenu(opts?: {
       const row = h(
         "div",
         {
-          class: cn(
-            "flex items-center justify-between px-3 py-1.5 text-[13px] rounded-[14px]",
-            it.disabled ? "opacity-50 pointer-events-none" : "cursor-pointer",
-            "hover:bg-context-menu-item-hover-background hover:text-context-menu-item-hover-foreground",
-            "active:bg-context-menu-item-hover-background",
-          ),
+          class: [
+            "context-menu-row",
+            it.disabled ? "context-menu-row--disabled" : "",
+          ]
+            .filter(Boolean)
+            .join(" "),
           on: {
             mouseenter: cancelClose,
             mousedown: (e: Event) => {
@@ -182,10 +173,10 @@ export function ContextMenu(opts?: {
             },
           },
         },
-        h("span", { class: "truncate" }, it.label),
+        h("span", { class: "context-menu-row__label" }, it.label),
         h(
           "div",
-          { class: "text-[12px] ml-8 opacity-70" },
+          { class: "context-menu-row__meta" },
           it.command_id ? it.command_id : "",
         ),
       );
@@ -201,12 +192,7 @@ export function ContextMenu(opts?: {
   const render = () => {
     content.innerHTML = "";
     const main = buildPanel(currentItems, false);
-    main.style.position = "static";
-    main.style.display = "block";
-    main.className = cn(
-      "p-0 border-0 shadow-none bg-transparent text-inherit",
-      main.className,
-    );
+    main.classList.add("context-menu-panel--inline");
     content.appendChild(main);
   };
 

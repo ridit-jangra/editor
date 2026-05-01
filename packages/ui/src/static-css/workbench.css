@@ -1,4 +1,5 @@
-@import "@vscode/codicons/dist/codicon.css";
+@import "./codicon.css";
+@import "./components/contextMenu.css";
 
 *,
 *::before,
@@ -114,4 +115,8 @@
 
 .wb-sidebar {
   padding-left: 10px;
+}
+
+.wb-root .codicon[class*="codicon-"] {
+  font: 16px/1 codicon !important;
 }

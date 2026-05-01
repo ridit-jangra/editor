@@ -245,7 +245,7 @@ export function VirtualTree(
     const root_actions = h(
       "div",
       { style: "display:flex;align-items:center;gap:4px;" },
-      Button(icon("file-plus"), {
+      Button(icon("file-add"), {
         variant: "ghost",
         onClick(e) {
           e.stopPropagation();
@@ -254,7 +254,7 @@ export function VirtualTree(
         },
         tooltip: { text: "New File" },
       }),
-      Button(icon("folder-plus"), {
+      Button(icon("new-folder"), {
         variant: "ghost",
         onClick(e) {
           e.stopPropagation();
