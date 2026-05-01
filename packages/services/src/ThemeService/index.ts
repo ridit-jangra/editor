@@ -20,6 +20,8 @@ export interface ITheme {
   activityHoverFg: string;
   actvityActiveBg: string;
   actvityActiveFg: string;
+  sidebarBg: string;
+  sidebarFg: string;
   statusBg: string;
   statusFg: string;
   statusHoverBg: string;

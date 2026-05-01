@@ -1,4 +1,4 @@
-import { ipcMain } from "electron";
+import { BrowserWindow, ipcMain } from "electron";
 import { EventEmitter } from "../emitter";
 import { Service } from "../service";
 import { Server } from "@ridit/relay/server";
@@ -32,6 +32,12 @@ import { resolve_pylsp, resolve_python } from "../LspService/utils";
 import { IFolderStructure } from "../../../ui/src/components/VirtualTree/types";
 import { Node } from "../VirtualFileSystemService";
 import { StorageService } from "./storage";
+
+export type CreateWindowOptions = {
+  titlebarWindowControls?: "inline" | "separate";
+  preload: string;
+  icon?: string;
+};
 
 async function get_root_structure(
   folder_path: string,
@@ -111,7 +117,7 @@ export class MainProcessService extends Service {
     this.eventEmitter = eventEmitter;
   }
 
-  override start(ipc: typeof ipcMain): void {
+  registerIPCHandlers() {
     const lspServer = new Server();
     const storage = new StorageService();
     let isLspServerStarted = false;
@@ -125,11 +131,11 @@ export class MainProcessService extends Service {
       },
     });
 
-    ipc.handle(FS_EXISTS, (_event: any, filePath: string) => {
+    ipcMain.handle(FS_EXISTS, (_event: any, filePath: string) => {
       return fs.existsSync(filePath);
     });
 
-    ipc.handle(FS_STAT, (_event: any, filePath: string) => {
+    ipcMain.handle(FS_STAT, (_event: any, filePath: string) => {
       const stat = fs.statSync(filePath);
       return {
         isFile: stat.isFile(),
@@ -140,7 +146,7 @@ export class MainProcessService extends Service {
       };
     });
 
-    ipc.handle(FS_READDIR, (_event: any, filePath: string) => {
+    ipcMain.handle(FS_READDIR, (_event: any, filePath: string) => {
       return fs.readdirSync(filePath, { withFileTypes: true }).map((entry) => ({
         name: entry.name,
         isFile: entry.isFile(),
@@ -149,11 +155,11 @@ export class MainProcessService extends Service {
       }));
     });
 
-    ipc.handle(FS_READ_FILE_TEXT, (_event: any, filePath: string) => {
+    ipcMain.handle(FS_READ_FILE_TEXT, (_event: any, filePath: string) => {
       return fs.readFileSync(filePath, "utf-8");
     });
 
-    ipc.handle(
+    ipcMain.handle(
       FS_WRITE_FILE_TEXT,
       (_event: any, filePath: string, content: string) => {
         fs.mkdirSync(path.dirname(filePath), { recursive: true });
@@ -161,11 +167,11 @@ export class MainProcessService extends Service {
       },
     );
 
-    ipc.handle(FS_CREATE_DIR, (_event: any, filePath: string) => {
+    ipcMain.handle(FS_CREATE_DIR, (_event: any, filePath: string) => {
       fs.mkdirSync(filePath, { recursive: true });
     });
 
-    ipc.handle(
+    ipcMain.handle(
       FS_REMOVE,
       (
         _event: any,
@@ -176,31 +182,37 @@ export class MainProcessService extends Service {
       },
     );
 
-    ipc.handle(FS_RENAME, (_event: any, oldPath: string, newPath: string) => {
-      fs.renameSync(oldPath, newPath);
-    });
+    ipcMain.handle(
+      FS_RENAME,
+      (_event: any, oldPath: string, newPath: string) => {
+        fs.renameSync(oldPath, newPath);
+      },
+    );
 
-    ipc.handle(FS_READ_BASE_64, (_event: any, filePath: string) => {
+    ipcMain.handle(FS_READ_BASE_64, (_event: any, filePath: string) => {
       return fs.readFileSync(filePath).toString("base64");
     });
 
-    ipc.handle(FS_RELATIVE, (_event: any, from: string, to: string) => {
+    ipcMain.handle(FS_RELATIVE, (_event: any, from: string, to: string) => {
       return path.relative(from, to);
     });
 
-    ipc.handle(FS_SAVE_AS, (_event: any, filePath: string, content: string) => {
-      fs.writeFileSync(filePath, content, "utf-8");
-    });
+    ipcMain.handle(
+      FS_SAVE_AS,
+      (_event: any, filePath: string, content: string) => {
+        fs.writeFileSync(filePath, content, "utf-8");
+      },
+    );
 
-    ipc.handle(FS_OPEN, (_event: any, filePath: string) => {
+    ipcMain.handle(FS_OPEN, (_event: any, filePath: string) => {
       return fs.readFileSync(filePath);
     });
 
-    ipc.handle(LSP_REGISTER_SERVER, (_event, def) => {
+    ipcMain.handle(LSP_REGISTER_SERVER, (_event, def) => {
       lspServer.register(def);
     });
 
-    ipc.handle(LSP_START_SERVER, async (_event, port) => {
+    ipcMain.handle(LSP_START_SERVER, async (_event, port) => {
       if (isLspServerStarted) return;
       const server = lspServer.start(port);
 
@@ -208,30 +220,112 @@ export class MainProcessService extends Service {
       return server;
     });
 
-    ipc.handle(LSP_STOP_SERVER, () => {
+    ipcMain.handle(LSP_STOP_SERVER, () => {
       return lspServer.stop();
     });
 
-    ipc.handle(EXPLORER_GET_ROOT_STRUCTURE, async (_, folder_path: string) => {
-      return await get_root_structure(folder_path);
-    });
+    ipcMain.handle(
+      EXPLORER_GET_ROOT_STRUCTURE,
+      async (_, folder_path: string) => {
+        return await get_root_structure(folder_path);
+      },
+    );
 
-    ipc.handle(EXPLORER_GET_CHILD_STRUCTURE, async (_, node: Node) => {
+    ipcMain.handle(EXPLORER_GET_CHILD_STRUCTURE, async (_, node: Node) => {
       return await get_child_structure(node);
     });
 
-    ipc.handle(STORAGE_GET, (_, key: string, storeName: string) => {
+    ipcMain.handle(STORAGE_GET, (_, key: string, storeName: string) => {
       return storage.get(key, storeName);
     });
 
-    ipc.handle(STORAGE_SET, (_, key: string, value: any, storeName: string) => {
-      storage.set(key, value, storeName);
-      return true;
-    });
+    ipcMain.handle(
+      STORAGE_SET,
+      (_, key: string, value: any, storeName: string) => {
+        storage.set(key, value, storeName);
+        return true;
+      },
+    );
 
-    ipc.handle(STORAGE_CREATE_IF_NOT_EXISTS, (_, storeName: string) => {
+    ipcMain.handle(STORAGE_CREATE_IF_NOT_EXISTS, (_, storeName: string) => {
       storage.createIfNotExists(storeName);
     });
+  }
+
+  createWindow({
+    preload,
+    icon,
+    titlebarWindowControls = "inline",
+  }: CreateWindowOptions) {
+    const isWin = process.platform === "win32";
+    const isMac = process.platform === "darwin";
+
+    const inset = isMac ? 75 : isWin ? 170 : 115;
+
+    const winHeight = 21;
+    const otherHeight = 31;
+
+    const optionHeight = isWin ? winHeight : otherHeight;
+
+    const win = new BrowserWindow({
+      width: 900,
+      height: 670,
+      show: false,
+      autoHideMenuBar: true,
+      ...(process.platform === "linux" ? { icon } : {}),
+      webPreferences: {
+        preload,
+        // sandbox: false
+      },
+      ...(titlebarWindowControls === "inline"
+        ? {
+            titleBarOverlay: {
+              // color: theme.get_color("workbench.background"),
+              // symbolColor: theme.get_color("workbench.foreground"),
+              height: optionHeight,
+            },
+            titleBarStyle: "hidden" as const,
+          }
+        : {}),
+    });
+
+    function updateTitlebarHeight() {
+      if (!win) return;
+      const zoomFactor = win.webContents.getZoomFactor();
+      const clamped = Math.min(Math.max(zoomFactor, 0.75), 2.0);
+      const newHeight = Math.round(optionHeight * 1.4 * clamped);
+      if (!isMac) {
+        win.setTitleBarOverlay({
+          // color: theme.get_color("workbench.background"),
+          // symbolColor: theme.get_color("workbench.foreground"),
+          height: newHeight,
+        });
+      }
+      const newInset = Math.round(inset / (clamped * 1.3));
+      win.webContents.send("titlebar-insets", newInset, isMac);
+    }
+
+    ipcMain.handle("workbench.zoom", () => {
+      if (!win) return;
+      win.webContents.setZoomFactor(win.webContents.getZoomFactor() + 0.1);
+      updateTitlebarHeight();
+    });
+
+    ipcMain.handle("workbench.zoomout", () => {
+      if (!win) return;
+      win.webContents.setZoomFactor(
+        Math.max(0.5, win.webContents.getZoomFactor() - 0.1),
+      );
+      updateTitlebarHeight();
+    });
+
+    ipcMain.on("titlebar-ready", (e) => {
+      if (!win) return;
+      e.sender.send("titlebar-insets", inset, isMac);
+      updateTitlebarHeight();
+    });
+
+    return win;
   }
 
   override stop(ipc: typeof ipcMain): void {

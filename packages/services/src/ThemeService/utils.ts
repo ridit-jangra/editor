@@ -21,12 +21,13 @@ export function themeToVariables(theme: ITheme): string {
         --wb-activity-active-fg: ${theme.actvityActiveFg};
         --wb-status-bg: ${theme.statusBg};
         --wb-status-fg: ${theme.statusFg};
+        --wb-sidebar-bg: ${theme.sidebarBg};
+        --wb-sidebar-fg: ${theme.sidebarFg};
         --wb-status-hover-bg: ${theme.statusHoverBg};
         --wb-status-hover-fg: ${theme.statusHoverFg};
         --wb-split-handle: ${theme.splitHandle};
         --wb-split-handle-hover: ${theme.splitHandleHover};
         --wb-split-handle-active: ${theme.splitHandleActive};
-
       }
     `;
 }

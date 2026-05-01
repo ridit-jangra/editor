@@ -15,19 +15,19 @@ export class StorageService extends Service {
   private type: "electron" | "web" | null = null;
   private storeName: string = defaultStoreName;
 
-  constructor() {
-    super("StorageService");
-  }
-
-  override async start(
+  constructor(
     window: Window,
     type: "electron" | "web",
     storeName: string = defaultStoreName,
   ) {
+    super("StorageService");
+
     this.window = window;
     this.type = type;
     this.storeName = storeName;
+  }
 
+  override async start() {
     await this.createStoreIfNotExist();
   }
 
