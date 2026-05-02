@@ -13,7 +13,7 @@ import { type EventEmitter } from "../../emitter";
 import { type LspService } from "../../LspService";
 import { type FileSystemService } from "../../FileSystemService";
 import { type ExplorerService } from "../../ExplorerService";
-import { normalize } from "../../VirtualFileSystemService";
+import { normalize } from "../../VirtualFileSystemService/utils";
 import {
   STATUSBAR_SET_FILENAME,
   STATUSBAR_SET_INDENTATION,
@@ -21,6 +21,7 @@ import {
   STATUSBAR_SET_LINE_COL,
 } from "../../emitter/channels";
 import { type EditorInfo, type IEditor } from "../types";
+import { ThemeService } from "../../ThemeService";
 
 export type MonacoEditorOptions =
   monaco.editor.IStandaloneEditorConstructionOptions;
@@ -29,6 +30,7 @@ export type MonacoEditorConfig = {
   lspService?: LspService;
   fileSystem: FileSystemService;
   explorerService: ExplorerService;
+  themService?: ThemeService;
   editorConfig?: MonacoEditorOptions;
   theme?: "Dark" | "Light";
 };
@@ -115,6 +117,7 @@ export class MonacoEditor implements IEditor {
   private container: HTMLElement | null = null;
 
   private readonly lspService: LspService | undefined;
+  private readonly themeService: ThemeService | undefined;
   private readonly editorConfig: MonacoEditorOptions | undefined;
   private readonly fileSystem: FileSystemService;
   private readonly explorerService: ExplorerService;
@@ -127,15 +130,160 @@ export class MonacoEditor implements IEditor {
     this.editorConfig = config.editorConfig;
     this.fileSystem = config.fileSystem;
     this.explorerService = config.explorerService;
+    this.themeService = config.themService;
     this.theme = config.theme;
   }
 
   async mount(container: HTMLElement): Promise<void> {
     this.container = container;
 
+    if (this.themeService) {
+      const t = (key: Parameters<typeof this.themeService.getToken>[0]) =>
+        this.themeService!.getToken(key) ?? "";
+
+      monaco.editor.defineTheme("custom-editor-theme", {
+        base: this.theme === "Dark" ? "vs-dark" : "vs",
+        inherit: true,
+        colors: {
+          "editor.background": this.themeService.getColor("editorBg"),
+          "editor.foreground": this.themeService.getColor("editorFg"),
+        },
+        rules: [
+          { token: "", foreground: t("default") },
+
+          { token: "keyword", foreground: t("keyword") },
+          { token: "keyword.json", foreground: t("keyword.json") },
+          {
+            token: "keyword.typeModifier",
+            foreground: t("keyword.typeModifier"),
+          },
+
+          { token: "source", foreground: t("source") },
+          { token: "metadata", foreground: t("metadata") },
+
+          { token: "number", foreground: t("number") },
+          { token: "boolean", foreground: t("boolean") },
+
+          { token: "string", foreground: t("string") },
+          { token: "string.binary", foreground: t("string.binary") },
+          { token: "string.escape", foreground: t("string.escape") },
+          {
+            token: "string.escape.alternative",
+            foreground: t("string.escape.alternative"),
+          },
+          { token: "string.format.item", foreground: t("string.format.item") },
+          { token: "string.regexp", foreground: t("string.regexp") },
+
+          { token: "identifier", foreground: t("identifier") },
+          { token: "identifier.this", foreground: t("identifier.this") },
+          {
+            token: "identifier.constant",
+            foreground: t("identifier.constant"),
+          },
+          {
+            token: "identifier.variable.local",
+            foreground: t("identifier.variable.local"),
+          },
+          {
+            token: "identifier.parameter",
+            foreground: t("identifier.parameter"),
+          },
+
+          {
+            token: "identifier.function.declaration",
+            foreground: t("identifier.function.declaration"),
+          },
+          {
+            token: "identifier.method.static",
+            foreground: t("identifier.method.static"),
+          },
+          { token: "identifier.builtin", foreground: t("identifier.builtin") },
+
+          { token: "identifier.type", foreground: t("identifier.type") },
+          { token: "identifier.field", foreground: t("identifier.field") },
+          {
+            token: "identifier.field.static",
+            foreground: t("identifier.field.static"),
+          },
+          {
+            token: "identifier.interface",
+            foreground: t("identifier.interface"),
+          },
+          {
+            token: "identifier.type.class",
+            foreground: t("identifier.type.class"),
+          },
+
+          { token: "comment", foreground: t("comment"), fontStyle: "italic" },
+          {
+            token: "comment.parameter",
+            foreground: t("comment.parameter"),
+            fontStyle: "italic",
+          },
+
+          { token: "punctuation", foreground: t("punctuation") },
+          { token: "string.value.json", foreground: t("string") },
+          { token: "string.key.json", foreground: t("identifier.field") },
+          { token: "number.json", foreground: t("number") },
+          { token: "keyword.json", foreground: t("keyword.json") },
+
+          {
+            token: "comment.line.json",
+            foreground: t("comment"),
+            fontStyle: "italic",
+          },
+          {
+            token: "comment.block.json",
+            foreground: t("comment"),
+            fontStyle: "italic",
+          },
+          { token: "delimiter.bracket.json", foreground: t("punctuation") },
+          { token: "delimiter.array.json", foreground: t("punctuation") },
+          { token: "delimiter.colon.json", foreground: t("punctuation") },
+          { token: "delimiter.comma.json", foreground: t("punctuation") },
+          { token: "tag", foreground: t("keyword") },
+          { token: "tag.html", foreground: t("keyword") },
+
+          { token: "attribute.name", foreground: t("identifier") },
+          { token: "attribute.value", foreground: t("string") },
+
+          { token: "delimiter.angle", foreground: t("punctuation") },
+
+          { token: "metatag", foreground: t("metadata") },
+
+          {
+            token: "comment.html",
+            foreground: t("comment"),
+            fontStyle: "italic",
+          },
+          { token: "tag", foreground: t("identifier") },
+
+          { token: "attribute.name", foreground: t("identifier.field") },
+          { token: "attribute.value", foreground: t("string") },
+
+          { token: "number", foreground: t("number") },
+          { token: "string", foreground: t("string") },
+
+          { token: "keyword", foreground: t("keyword") },
+
+          { token: "delimiter", foreground: t("punctuation") },
+
+          {
+            token: "comment.css",
+            foreground: t("comment"),
+            fontStyle: "italic",
+          },
+        ],
+      });
+    }
+
     this.editor = monaco.editor.create(container, {
       language: "plaintext",
-      theme: this.theme === "Dark" ? "vs-dark" : "vs-light",
+      theme: this.themeService
+        ? "custom-editor-theme"
+        : this.theme === "Dark"
+          ? "vs-dark"
+          : "vs",
       selectionHighlight: true,
       renderLineHighlight: "all",
       automaticLayout: true,
@@ -175,11 +323,17 @@ export class MonacoEditor implements IEditor {
   }
 
   show(): void {
+    console.log(
+      `[MonacoEditor] showing container; container: ${this.container}`,
+    );
     if (this.container) this.container.style.display = "block";
     this.editor?.layout();
   }
 
   hide(): void {
+    console.log(
+      `[MonacoEditor] hiding container; container: ${this.container}`,
+    );
     if (this.container) this.container.style.display = "none";
   }
 
@@ -261,6 +415,29 @@ export class MonacoEditor implements IEditor {
 
   get instance(): monaco.editor.IStandaloneCodeEditor | null {
     return this.editor;
+  }
+
+  private _save_active_model_state() {
+    if (!this.editor || !this.active_model) return;
+
+    const position = this.editor.getPosition();
+    const selection = this.editor.getSelection();
+
+    if (position) {
+      this.active_model.cursor_position = {
+        line: position.lineNumber,
+        col: position.column,
+      };
+    }
+
+    if (selection) {
+      this.active_model.selection = {
+        startLine: selection.startLineNumber,
+        startCol: selection.startColumn,
+        endLine: selection.endLineNumber,
+        endCol: selection.endColumn,
+      };
+    }
   }
 
   private _patch_model_resolver(): void {
@@ -367,6 +544,14 @@ export class MonacoEditor implements IEditor {
 
     this.editor!.onDidChangeModelOptions((e) => {
       this.eventEmitter.emit(STATUSBAR_SET_INDENTATION, e.tabSize);
+    });
+
+    this.editor!.onDidChangeCursorPosition(() => {
+      this._save_active_model_state();
+    });
+
+    this.editor!.onDidChangeCursorSelection(() => {
+      this._save_active_model_state();
     });
   }
 }

@@ -11,15 +11,17 @@ import {
   type MonacoEditorOptions,
 } from "./default-editors/monaco";
 import { TabService } from "../TabService";
+import { ThemeService } from "../ThemeService";
 
 export type { EditorId, EditorInfo, IEditor };
 export type { MonacoEditorOptions as EditorOptions };
 
 export type EditorRequiredServices = {
-  LspService?: LspService;
+  lspService?: LspService;
   fileSystem: FileSystemService;
   storageService: StorageService;
   explorerService: ExplorerService;
+  themeService?: ThemeService;
 };
 
 export type EditorServiceOptions = {
@@ -41,13 +43,19 @@ export class EditorService extends Service {
   ) {
     super("EditorService");
 
-    const { explorerService, fileSystem, storageService, LspService } =
-      options.services;
+    const {
+      explorerService,
+      fileSystem,
+      storageService,
+      lspService,
+      themeService,
+    } = options.services;
 
     this.monaco = new MonacoEditor(eventEmitter, {
-      lspService: LspService,
+      lspService: lspService,
       fileSystem: fileSystem,
       explorerService: explorerService,
+      themService: themeService,
       editorConfig: options.editorConfig,
       theme: options.theme,
     });
@@ -56,8 +64,8 @@ export class EditorService extends Service {
   }
 
   override start(window: any): void {
-    const disableBuiltinTs = this.options.services.LspService
-      ? this.options.services.LspService.config.disableInBuiltTypescriptWorker
+    const disableBuiltinTs = this.options.services.lspService
+      ? this.options.services.lspService.config.disableInBuiltTypescriptWorker
       : false;
 
     setup_monaco_workers(disableBuiltinTs);
@@ -91,7 +99,8 @@ export class EditorService extends Service {
       await this.open(tab.path);
     });
 
-    this.eventEmitter.on("tab:close", async (id: string) => {
+    this.eventEmitter.on("tab:removeTab", async (id: string) => {
+      // TODO
     });
   }
 
@@ -151,6 +160,19 @@ export class EditorService extends Service {
     const editor = this.editors.get(id);
     if (!editor) throw new Error(`[EditorService] Unknown editor id: "${id}"`);
     await this._switch_to(editor);
+  }
+
+  hide() {
+    const editors = this.editors;
+    editors.forEach((editor) => {
+      editor.hide();
+    });
+  }
+
+  show(id: EditorId) {
+    const editor = this.editors.get(id);
+    if (!editor) throw new Error(`[EditorService] Unknown editor id: "${id}"`);
+    editor.show();
   }
 
   private _register(editor: IEditor): void {
