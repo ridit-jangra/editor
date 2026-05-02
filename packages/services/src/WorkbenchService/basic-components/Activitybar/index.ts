@@ -129,7 +129,9 @@ export class ActivityBarComponent {
       btn.appendChild(iconEl);
       btn.appendChild(labelEl);
     } else {
-      btn.textContent = item.icon;
+      const iconEl = icon(item.icon);
+
+      btn.appendChild(iconEl);
     }
 
     btn.addEventListener("click", () => this.setActive(item.id));
