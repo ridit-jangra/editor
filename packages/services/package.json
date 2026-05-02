@@ -7,7 +7,8 @@
     "./node": "./src/exports/node.ts",
     "./browser": "./src/exports/browser.ts",
     "./renderer": "./src/exports/renderer.ts",
-    "./preload": "./src/exports/preload.ts"
+    "./preload": "./src/exports/preload.ts",
+    "./workbench": "./src/exports/workbench.ts"
   },
   "private": true,
   "devDependencies": {
