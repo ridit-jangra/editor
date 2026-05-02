@@ -8,12 +8,14 @@ import { type IEditor, type EditorInfo, type EditorId } from "./types";
 import {
   MonacoEditor,
   type MonacoEditorOptions,
+  type MonacoWorkerFactories,
 } from "./default-editors/monaco";
 import { TabService } from "../TabService";
 import { ThemeService } from "../ThemeService";
 
 export type { EditorId, EditorInfo, IEditor };
 export type { MonacoEditorOptions as EditorOptions };
+export type { MonacoWorkerFactories };
 
 export type EditorRequiredServices = {
   lspService?: LspService;
@@ -26,6 +28,7 @@ export type EditorRequiredServices = {
 export type EditorServiceOptions = {
   services: EditorRequiredServices;
   editorConfig?: MonacoEditorOptions;
+  workerFactories?: MonacoWorkerFactories;
   theme?: "Dark" | "Light";
 };
 
@@ -42,34 +45,25 @@ export class EditorService extends Service {
   ) {
     super("EditorService");
 
-    const {
-      explorerService,
-      fileSystem,
-      storageService,
-      lspService,
-      themeService,
-    } = options.services;
+    const { explorerService, fileSystem, lspService, themeService } =
+      options.services;
 
     this.monaco = new MonacoEditor(eventEmitter, {
-      lspService: lspService,
-      fileSystem: fileSystem,
-      explorerService: explorerService,
+      lspService,
+      fileSystem,
+      explorerService,
       themService: themeService,
       editorConfig: options.editorConfig,
+      workerFactories: options.workerFactories,
       theme: options.theme,
       disableBuiltinTs:
-        options.services.lspService?.config.disableInBuiltTypescriptWorker ??
-        false,
+        lspService?.config.disableInBuiltTypescriptWorker ?? false,
     });
 
     this._register(this.monaco);
   }
 
   override start(window: any): void {
-    const disableBuiltinTs = this.options.services.lspService
-      ? this.options.services.lspService.config.disableInBuiltTypescriptWorker
-      : false;
-
     this.eventEmitter.on("editor:openFile", async (path: string) => {
       await this.open(path);
     });
@@ -95,11 +89,10 @@ export class EditorService extends Service {
     this.eventEmitter.on("tab:click", async (id: string) => {
       const tab = this.tabService?.getTabs().find((t) => t.id === id);
       if (!tab) return;
-
       await this.open(tab.path);
     });
 
-    this.eventEmitter.on("tab:removeTab", async (id: string) => {
+    this.eventEmitter.on("tab:removeTab", async (_id: string) => {
       // TODO
     });
   }
@@ -175,7 +168,7 @@ export class EditorService extends Service {
   }
 
   hide() {
-    if (!this.container) return; // not mounted yet
+    if (!this.container) return;
     this.editors.forEach((editor) => editor.hide());
   }
 

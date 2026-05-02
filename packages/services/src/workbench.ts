@@ -1,5 +1,8 @@
 import { EditorService } from "./EditorService";
-import { MonacoEditorOptions } from "./EditorService/default-editors/monaco";
+import {
+  MonacoEditorOptions,
+  MonacoWorkerFactories,
+} from "./EditorService/default-editors/monaco";
 import { EventEmitter } from "./emitter";
 import { ExplorerService } from "./ExplorerService";
 import { FileSystemService } from "./FileSystemService";
@@ -16,6 +19,7 @@ export type WebPresetOptions = {
   theme?: BasicTheme;
   storeName?: string;
   virtualFsName?: string;
+  workerFactories?: MonacoWorkerFactories;
 };
 
 export type ElectronPresetOptions = {
@@ -27,6 +31,7 @@ export type ElectronPresetOptions = {
   editorConfig?: MonacoEditorOptions;
   theme?: BasicTheme;
   storeName?: string;
+  workerFactories?: MonacoWorkerFactories;
 };
 
 export class Workbench {
@@ -71,6 +76,7 @@ export class Workbench {
       },
       theme: opts.theme ?? "Dark",
       editorConfig: opts.editorConfig,
+      workerFactories: opts.workerFactories,
     });
 
     return new WorkbenchService(eventEmitter, {

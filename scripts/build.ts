@@ -35,6 +35,14 @@ function getExternals(pkgDir: string): string[] {
   return [
     ...Object.keys(pkg.dependencies ?? {}),
     ...Object.keys(pkg.peerDependencies ?? {}),
+    // strip vite-specific suffixes — these must be handled by the consumer's bundler
+    "monaco-editor/esm/vs/editor/editor.worker?worker",
+    "monaco-editor/esm/vs/language/json/json.worker?worker",
+    "monaco-editor/esm/vs/language/css/css.worker?worker",
+    "monaco-editor/esm/vs/language/html/html.worker?worker",
+    "monaco-editor/esm/vs/language/typescript/ts.worker?worker",
+    "monaco-editor/esm/vs/editor/standalone/browser/standaloneServices?internal",
+    "monaco-editor/esm/vs/editor/common/services/resolverService?internal",
   ];
 }
 

@@ -1,9 +1,3 @@
-import editor_worker from "monaco-editor/esm/vs/editor/editor.worker?worker";
-import json_worker from "monaco-editor/esm/vs/language/json/json.worker?worker";
-import css_worker from "monaco-editor/esm/vs/language/css/css.worker?worker";
-import html_worker from "monaco-editor/esm/vs/language/html/html.worker?worker";
-import ts_worker from "monaco-editor/esm/vs/language/typescript/ts.worker?worker";
-
 import { StandaloneServices } from "monaco-editor/esm/vs/editor/standalone/browser/standaloneServices?internal";
 import { ITextModelService } from "monaco-editor/esm/vs/editor/common/services/resolverService?internal";
 import * as monaco from "monaco-editor";
@@ -34,6 +28,7 @@ export type MonacoEditorConfig = {
   themService?: ThemeService;
   editorConfig?: MonacoEditorOptions;
   theme?: "Dark" | "Light";
+  workerFactories?: MonacoWorkerFactories;
 };
 
 export interface ModelEntry {
@@ -48,6 +43,14 @@ export interface ModelEntry {
     endCol: number;
   };
 }
+
+export type MonacoWorkerFactories = {
+  editor: new () => Worker;
+  json?: new () => Worker;
+  css?: new () => Worker;
+  html?: new () => Worker;
+  typescript?: new () => Worker;
+};
 
 export class MonacoEditor implements IEditor {
   readonly info: EditorInfo = {
@@ -125,6 +128,7 @@ export class MonacoEditor implements IEditor {
   private readonly theme: "Dark" | "Light" | undefined;
   private readonly eventEmitter: EventEmitter;
   private readonly disableBuiltinTs: boolean;
+  private readonly workerFactories: MonacoWorkerFactories | undefined;
 
   constructor(eventEmitter: EventEmitter, config: MonacoEditorConfig) {
     this.eventEmitter = eventEmitter;
@@ -135,12 +139,15 @@ export class MonacoEditor implements IEditor {
     this.themeService = config.themService;
     this.theme = config.theme;
     this.disableBuiltinTs = config.disableBuiltinTs ?? false;
+    this.workerFactories = config.workerFactories;
   }
 
   async mount(container: HTMLElement): Promise<void> {
     this.container = container;
 
-    setup_monaco_workers(this.disableBuiltinTs);
+    if (this.workerFactories) {
+      setup_monaco_workers(this.workerFactories, this.disableBuiltinTs);
+    }
 
     if (this.themeService) {
       const t = (key: Parameters<typeof this.themeService.getToken>[0]) =>
@@ -564,20 +571,29 @@ export class MonacoEditor implements IEditor {
 }
 
 export function setup_monaco_workers(
-  disableInBuiltTypescriptWorker = false,
+  factories: MonacoWorkerFactories,
+  disableTs = false,
 ): void {
   (window as any).MonacoEnvironment = {
     getWorker(_: unknown, label: string) {
-      if (label === "json") return new json_worker();
-      if (label === "css" || label === "scss" || label === "less")
-        return new css_worker();
-      if (label === "html" || label === "handlebars" || label === "razor")
-        return new html_worker();
-      if (label === "typescript" || label === "javascript")
-        return disableInBuiltTypescriptWorker
-          ? new Worker(new URL(""))
-          : new ts_worker();
-      return new editor_worker();
+      if (label === "json" && factories.json) return new factories.json();
+      if (
+        (label === "css" || label === "scss" || label === "less") &&
+        factories.css
+      )
+        return new factories.css();
+      if (
+        (label === "html" || label === "handlebars" || label === "razor") &&
+        factories.html
+      )
+        return new factories.html();
+      if (
+        (label === "typescript" || label === "javascript") &&
+        factories.typescript &&
+        !disableTs
+      )
+        return new factories.typescript();
+      return new factories.editor();
     },
   };
 }
