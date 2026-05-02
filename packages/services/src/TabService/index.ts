@@ -37,26 +37,27 @@ export class TabService extends Service {
   }
 
   override async start(): Promise<void> {
-    this.eventEmitter.on("tab:openTab", (path: string) => {
+    this.eventEmitter.on("tab:openTab", async (path: string) => {
       this.addTab(path);
-      this.saveTabsToStore();
+      await this.saveTabsToStore();
+      this.hideOrShowEditor();
     });
-    this.eventEmitter.on("tab:removeTab", (id: string) => {
+    this.eventEmitter.on("tab:removeTab", async (id: string) => {
       this.removeTab(id);
-      this.saveTabsToStore();
+      await this.saveTabsToStore();
       this.hideOrShowEditor();
     });
 
     const storedTabs = await this.getTabsFromStore();
-    if (storedTabs) {
+    if (storedTabs && storedTabs.length > 0) {
       this.tabs = storedTabs;
+      this.on.onTabUpdate?.(this.tabs);
 
-      this.tabs.forEach((tab) => {
-        this.addTab(tab.path);
-      });
+      const active = this.tabs.find((t) => t.active) ?? this.tabs[0]!;
+      active.active = true;
+
+      await this.options.services.editorService.open(active.path);
     }
-
-    this.hideOrShowEditor();
   }
 
   hideOrShowEditor() {
@@ -72,7 +73,6 @@ export class TabService extends Service {
 
   addTab(path: string) {
     const existing = this.tabs.find((t) => t.path === path);
-
     if (existing) {
       this.setActive(existing.id);
       return existing;
@@ -80,10 +80,8 @@ export class TabService extends Service {
 
     this.tabs.forEach((t) => (t.active = false));
 
-    const id = genID();
-
     const newTab: Tab = {
-      id,
+      id: genID(),
       path,
       name: basename(path),
       editor: "@ridit/monaco",
@@ -92,14 +90,20 @@ export class TabService extends Service {
 
     this.tabs.push(newTab);
     this.on.onTabUpdate?.(this.tabs);
-
     return newTab;
   }
 
   removeTab(id: string) {
-    const newTabs = this.tabs.filter((t) => t.id !== id);
+    const closing = this.tabs.find((t) => t.id === id);
+    const wasActive = closing?.active ?? false;
 
-    this.tabs = newTabs;
+    this.tabs = this.tabs.filter((t) => t.id !== id);
+
+    if (wasActive && this.tabs.length > 0) {
+      const next = this.tabs[this.tabs.length - 1]!;
+      next.active = true;
+      this.options.services.editorService.open(next.path);
+    }
 
     this.on.onTabUpdate?.(this.tabs);
   }
@@ -117,7 +121,11 @@ export class TabService extends Service {
   }
 
   saveTabsToStore() {
-    this.options.services.storageService.set("editor-tabs", this.tabs, "tabs");
+    return this.options.services.storageService.set(
+      "editor-tabs",
+      this.tabs,
+      "tabs",
+    );
   }
 
   getTabsFromStore() {
