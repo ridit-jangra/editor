@@ -10,7 +10,7 @@ export type VirtualListOpts<T> = {
   cache?: boolean;
   scrollViewport?: HTMLElement;
   key?: (item: T, index: number) => string;
-  render: (item: T, index: number) => HTMLElement;
+  render: (item: T, index: number) => Promise<HTMLElement>;
   onRangeChange?: (start: number, end: number) => void;
 };
 
@@ -114,7 +114,7 @@ export function VirtualList<T>(opts: VirtualListOpts<T>) {
     byKey.forEach((el) => el.remove());
   };
 
-  const renderRange = (s: number, e: number) => {
+  const renderRange = async (s: number, e: number) => {
     if (s === start && e === end) return;
     start = s;
     end = e;
@@ -131,7 +131,7 @@ export function VirtualList<T>(opts: VirtualListOpts<T>) {
       let row = shouldCache ? cache.get(key) : undefined;
 
       if (!row) {
-        row = opts.render(items[i]!, i);
+        row = await opts.render(items[i]!, i);
         row.style.height = `${opts.itemHeight}px`;
         row.dataset.vkey = key;
         if (shouldCache) cache.set(key, row);

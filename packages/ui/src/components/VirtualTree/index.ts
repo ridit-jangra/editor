@@ -19,6 +19,10 @@ import {
   rebase_uri,
   get_parent_uri,
 } from "./utils/uri";
+import {
+  getIconName,
+  loadSvg,
+} from "../../../../services/src/WorkbenchService/utils";
 import { ScrollArea } from "../ScrollArea";
 import { Button } from "../Button";
 import { icon } from "../../utils/icon";
@@ -101,7 +105,6 @@ export function VirtualTree(
     onSelect?: (id: string, node: Node) => void;
     onOpenFoldersChange?: (open_folders: string[]) => void;
     renderRight?: (row: FlatRow) => HTMLElement | null;
-    get_icon?: (name: string) => string;
     icon_folder_name?: string;
     scrollViewport?: HTMLElement;
   },
@@ -587,7 +590,7 @@ export function VirtualTree(
     scrollViewport: scroll.viewport,
     key: (r) =>
       editing_node_id === `__renaming_${r.id}` ? `renaming:${r.id}` : r.id,
-    render: (row) => {
+    render: async (row) => {
       if (
         editing_node_id &&
         editing_node_id.startsWith("__adding_") &&
@@ -638,7 +641,7 @@ export function VirtualTree(
           depth: row.depth,
           currentName: row.label,
           isFolder: row.node.type === "folder",
-          get_icon: opts.get_icon,
+          // get_icon: opts.get_icon,
           icon_folder_name: opts.icon_folder_name,
           onComplete: async (old_uri: string, new_uri: string) => {
             editing_node_id = null;
@@ -684,10 +687,18 @@ export function VirtualTree(
 
       const file_icon =
         row.node.type !== "folder" &&
-        h("img", { style: "width:16px;height:16px;margin-right:4px;" });
-      if (file_icon && opts.get_icon && opts.icon_folder_name)
-        (file_icon as HTMLImageElement).src =
-          `./${opts.icon_folder_name}/${opts.get_icon(row.id)}`;
+        h("span", {
+          style: "width:16px;height:16px;margin-right:4px;",
+        });
+
+      const iconName = getIconName(row.node.name);
+      const svgText = loadSvg(iconName) ?? loadSvg("file.type.default");
+      if (file_icon) (file_icon as HTMLSpanElement).innerHTML = svgText;
+      if (file_icon) {
+        file_icon.querySelector("svg")!.style.width = "14px";
+        file_icon.querySelector("svg")!.style.height = "14px";
+        file_icon.querySelector("svg")!.style.display = "flex";
+      }
 
       const left = h(
         "div",
