@@ -8,7 +8,7 @@ const workbench = await Workbench.createWeb({
     fontSize: 20,
   },
   virtualFsName: "hello",
-  theme: "Dark",
+  theme: "Light",
 });
 
 const fileSystem = workbench.fileSystem;
