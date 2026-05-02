@@ -4,7 +4,7 @@ import { Service } from "../service";
 import { Server } from "@ridit/relay/server";
 
 import fs from "fs";
-import path from "path";
+import path, { join } from "path";
 
 import {
   FS_EXISTS,
@@ -76,11 +76,11 @@ async function get_root_structure(
   }
 }
 
-async function get_child_structure(node: Node): Promise<Node[]> {
-  if (node.type !== "folder") return [];
+async function get_child_structure(path: string): Promise<Node[]> {
+  // if (node.type !== "folder") return [];
 
   try {
-    const entries = fs.readdirSync(node.path, {
+    const entries = fs.readdirSync(path, {
       withFileTypes: true,
       recursive: false,
     });
@@ -88,7 +88,7 @@ async function get_child_structure(node: Node): Promise<Node[]> {
     const child_nodes: Node[] = [];
 
     for (const entry of entries) {
-      const full_path = path.join(node.path, entry.name);
+      const full_path = join(path, entry.name);
 
       child_nodes.push({
         id: full_path,
@@ -231,8 +231,8 @@ export class MainProcessService extends Service {
       },
     );
 
-    ipcMain.handle(EXPLORER_GET_CHILD_STRUCTURE, async (_, node: Node) => {
-      return await get_child_structure(node);
+    ipcMain.handle(EXPLORER_GET_CHILD_STRUCTURE, async (_, path: string) => {
+      return await get_child_structure(path);
     });
 
     ipcMain.handle(STORAGE_GET, (_, key: string, storeName: string) => {
