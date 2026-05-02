@@ -9,6 +9,7 @@ import {
   MonacoEditor,
   type MonacoEditorOptions,
   type MonacoWorkerFactories,
+  type MonacoInternalServicesFactories,
 } from "./default-editors/monaco";
 import { TabService } from "../TabService";
 import { ThemeService } from "../ThemeService";
@@ -16,6 +17,7 @@ import { ThemeService } from "../ThemeService";
 export type { EditorId, EditorInfo, IEditor };
 export type { MonacoEditorOptions as EditorOptions };
 export type { MonacoWorkerFactories };
+export type { MonacoInternalServicesFactories };
 
 export type EditorRequiredServices = {
   lspService?: LspService;
@@ -29,6 +31,7 @@ export type EditorServiceOptions = {
   services: EditorRequiredServices;
   editorConfig?: MonacoEditorOptions;
   workerFactories?: MonacoWorkerFactories;
+  interalServices?: MonacoInternalServicesFactories;
   theme?: "Dark" | "Light";
 };
 

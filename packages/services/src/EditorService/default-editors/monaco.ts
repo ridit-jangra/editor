@@ -1,5 +1,3 @@
-import { StandaloneServices } from "monaco-editor/esm/vs/editor/standalone/browser/standaloneServices?internal";
-import { ITextModelService } from "monaco-editor/esm/vs/editor/common/services/resolverService?internal";
 import * as monaco from "monaco-editor";
 
 import { path_to_language } from "../utils";
@@ -29,6 +27,7 @@ export type MonacoEditorConfig = {
   editorConfig?: MonacoEditorOptions;
   theme?: "Dark" | "Light";
   workerFactories?: MonacoWorkerFactories;
+  interalServices?: MonacoInternalServicesFactories;
 };
 
 export interface ModelEntry {
@@ -50,6 +49,11 @@ export type MonacoWorkerFactories = {
   css?: new () => Worker;
   html?: new () => Worker;
   typescript?: new () => Worker;
+};
+
+export type MonacoInternalServicesFactories = {
+  standaloneServices: () => any;
+  ITextModelService: () => any;
 };
 
 export class MonacoEditor implements IEditor {
@@ -129,6 +133,9 @@ export class MonacoEditor implements IEditor {
   private readonly eventEmitter: EventEmitter;
   private readonly disableBuiltinTs: boolean;
   private readonly workerFactories: MonacoWorkerFactories | undefined;
+  private readonly internalServices:
+    | MonacoInternalServicesFactories
+    | undefined;
 
   constructor(eventEmitter: EventEmitter, config: MonacoEditorConfig) {
     this.eventEmitter = eventEmitter;
@@ -140,6 +147,7 @@ export class MonacoEditor implements IEditor {
     this.theme = config.theme;
     this.disableBuiltinTs = config.disableBuiltinTs ?? false;
     this.workerFactories = config.workerFactories;
+    this.internalServices = config.interalServices;
   }
 
   async mount(container: HTMLElement): Promise<void> {
@@ -456,28 +464,33 @@ export class MonacoEditor implements IEditor {
 
   private _patch_model_resolver(): void {
     try {
-      const svc = StandaloneServices.get(ITextModelService) as any;
-      if (!svc || svc.__meridia_patched) return;
+      if (this.internalServices) {
+        const StandaloneServices = this.internalServices
+          .standaloneServices as any;
+        const ITextModelService = this.internalServices.ITextModelService;
+        const svc = StandaloneServices.get(ITextModelService) as any;
+        if (!svc || svc.__meridia_patched) return;
 
-      svc.__meridia_patched = true;
-      const original = svc.createModelReference.bind(svc);
+        svc.__meridia_patched = true;
+        const original = svc.createModelReference.bind(svc);
 
-      svc.createModelReference = async (resource: monaco.Uri) => {
-        if (!monaco.editor.getModel(resource)) {
-          try {
-            const fsPath =
-              resource.fsPath ||
-              decodeURIComponent(resource.path).replace(/^\//, "");
-            const content = await this.fileSystem.readFile(fsPath);
-            monaco.editor.createModel(
-              content,
-              path_to_language(fsPath, monaco),
-              resource,
-            );
-          } catch {}
-        }
-        return original(resource);
-      };
+        svc.createModelReference = async (resource: monaco.Uri) => {
+          if (!monaco.editor.getModel(resource)) {
+            try {
+              const fsPath =
+                resource.fsPath ||
+                decodeURIComponent(resource.path).replace(/^\//, "");
+              const content = await this.fileSystem.readFile(fsPath);
+              monaco.editor.createModel(
+                content,
+                path_to_language(fsPath, monaco),
+                resource,
+              );
+            } catch {}
+          }
+          return original(resource);
+        };
+      }
     } catch {}
   }
 

@@ -1,6 +1,7 @@
 import { EditorService } from "./EditorService";
 import {
   MonacoEditorOptions,
+  MonacoInternalServicesFactories,
   MonacoWorkerFactories,
 } from "./EditorService/default-editors/monaco";
 import { EventEmitter } from "./emitter";
@@ -20,6 +21,7 @@ export type WebPresetOptions = {
   storeName?: string;
   virtualFsName?: string;
   workerFactories?: MonacoWorkerFactories;
+  internalServicesFactories?: MonacoInternalServicesFactories;
 };
 
 export type ElectronPresetOptions = {
@@ -32,6 +34,7 @@ export type ElectronPresetOptions = {
   theme?: BasicTheme;
   storeName?: string;
   workerFactories?: MonacoWorkerFactories;
+  internalServicesFactories?: MonacoInternalServicesFactories;
 };
 
 export class Workbench {
@@ -76,6 +79,7 @@ export class Workbench {
       },
       theme: opts.theme ?? "Dark",
       editorConfig: opts.editorConfig,
+      interalServices: opts.internalServicesFactories,
       workerFactories: opts.workerFactories,
     });
 
@@ -119,6 +123,8 @@ export class Workbench {
       services: { fileSystem, explorerService, themeService, storageService },
       theme: opts.theme ?? "Dark",
       editorConfig: opts.editorConfig,
+      interalServices: opts.internalServicesFactories,
+      workerFactories: opts.workerFactories,
     });
 
     const workbenchService = new WorkbenchService(eventEmitter, {
