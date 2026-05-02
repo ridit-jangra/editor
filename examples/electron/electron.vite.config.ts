@@ -53,6 +53,10 @@ export default defineConfig({
           __dirname,
           '../../packages/services/src/exports/renderer.ts'
         ),
+        '@ridit/editor-services/workbench': resolve(
+          __dirname,
+          '../../packages/services/src/exports/workbench.ts'
+        ),
         '@ridit/editor-services': resolve(__dirname, '../../packages/services/src/index.ts'),
         '@ridit/editor-ui/static-css': resolve(__dirname, '../../packages/ui/src/static-css'),
         '@ridit/editor-ui': resolve(__dirname, '../../packages/ui/src/index.ts')
