@@ -1,4 +1,4 @@
-// WRITTEN BY CLAUDE
+#!/usr/bin/env bun
 
 import { $ } from "bun";
 import { join, resolve } from "path";
@@ -7,12 +7,27 @@ import { readFileSync, writeFileSync } from "fs";
 const ROOT = join(import.meta.dir, "..");
 
 const PACKAGES = [
-  { name: "@ridit/editor-ui", dir: join(ROOT, "packages/ui") },
-  { name: "@ridit/editor-services", dir: join(ROOT, "packages/services") },
+  {
+    name: "@ridit/editor-ui",
+    dir: join(ROOT, "packages/ui"),
+    typesBase: "ui/src",
+  },
+  {
+    name: "@ridit/editor-services",
+    dir: join(ROOT, "packages/services"),
+    typesBase: "services/src",
+  },
 ];
 
 function readPackageJson(dir: string) {
   return JSON.parse(readFileSync(join(dir, "package.json"), "utf-8"));
+}
+
+function writePackageJson(dir: string, data: object) {
+  writeFileSync(
+    join(dir, "package.json"),
+    JSON.stringify(data, null, 2) + "\n",
+  );
 }
 
 function getExternals(pkgDir: string): string[] {
@@ -29,18 +44,14 @@ function resolveEntrypoints(pkgDir: string): string[] {
   const seen = new Set<string>();
 
   for (const value of Object.values(exports)) {
-    // value can be a string or { default: string, ... }
     const raw =
       typeof value === "string"
         ? value
         : typeof value === "object" && value !== null
-          ? Object.values(value as Record<string, string>)[0]
+          ? (Object.values(value as Record<string, string>)[0] ?? null)
           : null;
 
-    if (!raw) continue;
-
-    // only include local ts src files
-    if (!raw.startsWith("./src/")) continue;
+    if (!raw?.startsWith("./src/")) continue;
 
     const abs = resolve(pkgDir, raw);
     if (!seen.has(abs)) seen.add(abs);
@@ -49,7 +60,10 @@ function resolveEntrypoints(pkgDir: string): string[] {
   return [...seen];
 }
 
-function buildExportsMap(pkgDir: string, outDir: string) {
+function buildExportsMap(
+  pkgDir: string,
+  typesBase: string,
+): Record<string, object> {
   const pkg = readPackageJson(pkgDir);
   const exports = pkg.exports ?? {};
   const result: Record<string, object> = {};
@@ -59,7 +73,7 @@ function buildExportsMap(pkgDir: string, outDir: string) {
       typeof value === "string"
         ? value
         : typeof value === "object" && value !== null
-          ? Object.values(value as Record<string, string>)[0]
+          ? (Object.values(value as Record<string, string>)[0] ?? null)
           : null;
 
     if (!raw?.startsWith("./src/")) continue;
@@ -68,20 +82,23 @@ function buildExportsMap(pkgDir: string, outDir: string) {
     const rel = raw.replace("./src/", "").replace(/\.ts$/, "");
 
     result[key] = {
-      import: `./${join("esm", rel)}.js`,
-      require: `./${join("cjs", rel)}.js`,
-      types: `./${join("types", rel)}.d.ts`,
+      import: `./esm/${rel}.js`,
+      require: `./cjs/${rel}.js`,
+      types: `./types/${typesBase}/${rel}.d.ts`,
     };
   }
 
   return result;
 }
 
-async function buildPackage(pkg: { name: string; dir: string }) {
+async function buildPackage(pkg: {
+  name: string;
+  dir: string;
+  typesBase: string;
+}) {
   console.log(`\n▶ Building ${pkg.name}...`);
 
   const outDir = join(pkg.dir, "dist");
-  const srcDir = join(pkg.dir, "src");
   const tsconfigPath = join(pkg.dir, "tsconfig.build.json");
 
   await $`rm -rf ${outDir}`;
@@ -92,6 +109,8 @@ async function buildPackage(pkg: { name: string; dir: string }) {
     `  entrypoints: ${entrypoints.map((e) => e.replace(pkg.dir, "")).join(", ")}`,
   );
 
+  const externals = getExternals(pkg.dir);
+
   // --- ESM ---
   console.log(`  → ESM`);
   await Bun.build({
@@ -101,7 +120,7 @@ async function buildPackage(pkg: { name: string; dir: string }) {
     target: "browser",
     splitting: true,
     sourcemap: "external",
-    external: getExternals(pkg.dir),
+    external: externals,
   });
 
   // --- CJS ---
@@ -112,20 +131,18 @@ async function buildPackage(pkg: { name: string; dir: string }) {
     format: "cjs",
     target: "browser",
     sourcemap: "external",
-    external: getExternals(pkg.dir),
+    external: externals,
   });
 
   // --- Types ---
   console.log(`  → Types`);
-  await $`bunx tsc --project ${tsconfigPath} --emitDeclarationOnly --declaration --declarationDir ${join(outDir, "types")} --noEmit false --noUnusedLocals false --noUnusedParameters false`.cwd(
+  await $`bunx tsc --project "${tsconfigPath}" --emitDeclarationOnly --declaration --declarationDir "${join(outDir, "types")}" --noEmit false --noUnusedLocals false --noUnusedParameters false`.cwd(
     pkg.dir,
   );
 
   // --- dist/package.json ---
   const pkgJson = readPackageJson(pkg.dir);
-  const exportsMap = buildExportsMap(pkg.dir, outDir);
-
-  // find the root entrypoint (the "." export)
+  const exportsMap = buildExportsMap(pkg.dir, pkg.typesBase);
   const rootExport = exportsMap["."] as any;
 
   const distPkg = {
@@ -137,9 +154,9 @@ async function buildPackage(pkg: { name: string; dir: string }) {
     repository: pkgJson.repository ?? {},
     keywords: pkgJson.keywords ?? [],
     type: "module",
-    main: rootExport?.require ?? "./cjs/index.js",
-    module: rootExport?.import ?? "./esm/index.js",
-    types: rootExport?.types ?? "./types/index.d.ts",
+    main: rootExport?.require ?? `./cjs/index.js`,
+    module: rootExport?.import ?? `./esm/index.js`,
+    types: rootExport?.types ?? `./types/${pkg.typesBase}/index.d.ts`,
     exports: exportsMap,
     peerDependencies: pkgJson.peerDependencies ?? {},
     dependencies: pkgJson.dependencies ?? {},

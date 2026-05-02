@@ -1,7 +1,5 @@
 #!/usr/bin/env bun
 
-// WRITTEN BY CLAUDE
-
 import { $ } from "bun";
 import { join } from "path";
 import { readFileSync, writeFileSync } from "fs";
@@ -9,17 +7,33 @@ import { readFileSync, writeFileSync } from "fs";
 const ROOT = join(import.meta.dir, "..");
 
 const PACKAGES = [
-  { name: "@ridit/editor-ui", dir: join(ROOT, "packages/ui") },
-  { name: "@ridit/editor-services", dir: join(ROOT, "packages/services") },
+  {
+    name: "@ridit/editor-ui",
+    dir: join(ROOT, "packages/ui"),
+    typesBase: "ui/src",
+  },
+  {
+    name: "@ridit/editor-services",
+    dir: join(ROOT, "packages/services"),
+    typesBase: "services/src",
+  },
 ];
 
 type BumpType = "patch" | "minor" | "major";
 
 function bumpVersion(version: string, type: BumpType): string {
-  const [major, minor, patch] = version.split(".").map(Number);
-  if (type === "major") return `${major! + 1}.0.0`;
-  if (type === "minor") return `${major}.${minor! + 1}.0`;
-  return `${major}.${minor}.${patch! + 1}`;
+  if (!version) throw new Error(`package.json is missing a "version" field`);
+  const clean = version.trim().replace(/[^0-9.]/g, "");
+  const parts = clean.split(".").map(Number);
+  const major = parts[0] ?? 0;
+  const minor = parts[1] ?? 0;
+  const patch = parts[2] ?? 0;
+  if (isNaN(major) || isNaN(minor) || isNaN(patch)) {
+    throw new Error(`Invalid version: "${version}"`);
+  }
+  if (type === "major") return `${major + 1}.0.0`;
+  if (type === "minor") return `${major}.${minor + 1}.0`;
+  return `${major}.${minor}.${patch + 1}`;
 }
 
 function readPackageJson(dir: string) {
@@ -34,7 +48,7 @@ function writePackageJson(dir: string, data: object) {
 }
 
 async function releasePackage(
-  pkg: { name: string; dir: string },
+  pkg: { name: string; dir: string; typesBase: string },
   bump: BumpType,
   tag: string,
 ) {
@@ -50,51 +64,6 @@ async function releasePackage(
 
   // build
   await $`bun run ${join(ROOT, "scripts/build.ts")} ${pkg.name}`;
-
-  // write a dist package.json that points to the right files
-  const distPkgJson = {
-    name: pkgJson.name,
-    version: newVersion,
-    description: pkgJson.description ?? "",
-    license: pkgJson.license ?? "MIT",
-    author: pkgJson.author ?? "",
-    repository: pkgJson.repository ?? {},
-    keywords: pkgJson.keywords ?? [],
-    type: "module",
-    main: "./cjs/index.js",
-    module: "./esm/index.js",
-    types: "./types/index.d.ts",
-    exports: {
-      ".": {
-        import: "./esm/index.js",
-        require: "./cjs/index.js",
-        types: "./types/index.d.ts",
-      },
-      // expose sub-paths that exist in exports/
-      "./browser": {
-        import: "./esm/exports/browser.js",
-        require: "./cjs/exports/browser.js",
-        types: "./types/exports/browser.d.ts",
-      },
-      "./workbench": {
-        import: "./esm/exports/workbench.js",
-        require: "./cjs/exports/workbench.js",
-        types: "./types/exports/workbench.d.ts",
-      },
-    },
-    peerDependencies: pkgJson.peerDependencies ?? {},
-    sideEffects: false,
-  };
-
-  writeFileSync(
-    join(pkg.dir, "dist/package.json"),
-    JSON.stringify(distPkgJson, null, 2) + "\n",
-  );
-
-  // copy readme if it exists
-  try {
-    await $`cp ${join(pkg.dir, "README.md")} ${join(pkg.dir, "dist/README.md")}`;
-  } catch {}
 
   // publish from dist
   console.log(`  → Publishing to npm with tag: ${tag}`);

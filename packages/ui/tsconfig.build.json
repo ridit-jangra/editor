@@ -7,11 +7,13 @@
     "strict": true,
     "skipLibCheck": true,
     "declaration": true,
+    "noEmit": true,
     "emitDeclarationOnly": true,
+    "allowImportingTsExtensions": true,
+    "rewriteRelativeImportExtensions": true,
     "noUnusedLocals": false,
     "noUnusedParameters": false,
-    "allowImportingTsExtensions": true,
-    "rewriteRelativeImportExtensions": true
+    "rootDir": ".."
   },
   "include": ["src/**/*", "../services/src/**/*"],
   "exclude": ["node_modules", "dist"]
