@@ -29,6 +29,7 @@ export type MonacoEditorOptions =
 export type MonacoEditorConfig = {
   lspService?: LspService;
   fileSystem: FileSystemService;
+  disableBuiltinTs: boolean;
   explorerService: ExplorerService;
   themService?: ThemeService;
   editorConfig?: MonacoEditorOptions;
@@ -123,6 +124,7 @@ export class MonacoEditor implements IEditor {
   private readonly explorerService: ExplorerService;
   private readonly theme: "Dark" | "Light" | undefined;
   private readonly eventEmitter: EventEmitter;
+  private readonly disableBuiltinTs: boolean;
 
   constructor(eventEmitter: EventEmitter, config: MonacoEditorConfig) {
     this.eventEmitter = eventEmitter;
@@ -132,10 +134,13 @@ export class MonacoEditor implements IEditor {
     this.explorerService = config.explorerService;
     this.themeService = config.themService;
     this.theme = config.theme;
+    this.disableBuiltinTs = config.disableBuiltinTs ?? false;
   }
 
   async mount(container: HTMLElement): Promise<void> {
     this.container = container;
+
+    setup_monaco_workers(this.disableBuiltinTs);
 
     if (this.themeService) {
       const t = (key: Parameters<typeof this.themeService.getToken>[0]) =>
@@ -309,6 +314,8 @@ export class MonacoEditor implements IEditor {
     this._register_link_opener();
     this._register_editor_opener();
     this._bind_statusbar_events();
+
+    this.eventEmitter.emit(STATUSBAR_SET_LINE_COL, { line: 1, col: 1 });
 
     if (this.lspService) {
       const w = window as any;

@@ -7,7 +7,6 @@ import { type ExplorerService } from "../ExplorerService";
 import { type IEditor, type EditorInfo, type EditorId } from "./types";
 import {
   MonacoEditor,
-  setup_monaco_workers,
   type MonacoEditorOptions,
 } from "./default-editors/monaco";
 import { TabService } from "../TabService";
@@ -58,6 +57,9 @@ export class EditorService extends Service {
       themService: themeService,
       editorConfig: options.editorConfig,
       theme: options.theme,
+      disableBuiltinTs:
+        options.services.lspService?.config.disableInBuiltTypescriptWorker ??
+        false,
     });
 
     this._register(this.monaco);
@@ -67,8 +69,6 @@ export class EditorService extends Service {
     const disableBuiltinTs = this.options.services.lspService
       ? this.options.services.lspService.config.disableInBuiltTypescriptWorker
       : false;
-
-    setup_monaco_workers(disableBuiltinTs);
 
     this.eventEmitter.on("editor:openFile", async (path: string) => {
       await this.open(path);
@@ -162,17 +162,21 @@ export class EditorService extends Service {
     await this._switch_to(editor);
   }
 
-  hide() {
-    const editors = this.editors;
-    editors.forEach((editor) => {
-      editor.hide();
-    });
-  }
-
   show(id: EditorId) {
+    if (!this.container) return;
     const editor = this.editors.get(id);
     if (!editor) throw new Error(`[EditorService] Unknown editor id: "${id}"`);
+    const slot = this._slot_of(editor);
+    if (slot) {
+      slot.style.display = "block";
+      slot.style.opacity = "1";
+    }
     editor.show();
+  }
+
+  hide() {
+    if (!this.container) return; // not mounted yet
+    this.editors.forEach((editor) => editor.hide());
   }
 
   private _register(editor: IEditor): void {
