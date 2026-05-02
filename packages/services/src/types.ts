@@ -55,3 +55,13 @@ export type ComponentFactories = {
   editorArea?: EditorAreaFactory;
   tabBar?: TabBarFactory;
 };
+
+export type FileIconTheme = {
+  file: string;
+  folder: string;
+  folderExpanded: string;
+
+  fileNames?: Record<string, string>;
+  extensions?: Record<string, string>;
+  folderNames?: Record<string, string>;
+};
