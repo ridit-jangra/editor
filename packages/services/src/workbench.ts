@@ -85,9 +85,7 @@ export class Workbench {
     });
   }
 
-  static async createWeb(
-    opts: WebPresetOptions = {},
-  ): Promise<WorkbenchService> {
+  static async createWeb(opts: WebPresetOptions = {}) {
     const eventEmitter = new EventEmitter();
 
     const storageService = new StorageService(
@@ -117,7 +115,7 @@ export class Workbench {
       editorConfig: opts.editorConfig,
     });
 
-    return new WorkbenchService(eventEmitter, {
+    const workbenchService = new WorkbenchService(eventEmitter, {
       services: {
         editorService,
         explorerService,
@@ -127,5 +125,13 @@ export class Workbench {
       config: opts.config,
       theme: opts.theme ?? "Dark",
     });
+
+    return {
+      workbenchService,
+      editorService,
+      explorerService,
+      fileSystem,
+      storageService,
+    };
   }
 }
