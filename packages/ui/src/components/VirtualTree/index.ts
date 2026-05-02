@@ -67,29 +67,15 @@ function inject_spinner_style() {
   document.head.appendChild(style);
 }
 
-const S = {
-  row_active:
-    "background:var(--explorer-item-active-background);color:var(--explorer-item-active-foreground);",
-  row_passive: "color:var(--explorer-foreground);",
-} as const;
-
 function apply_active(el: HTMLElement, active: boolean) {
   if (active) {
-    el.style.background = "var(--explorer-item-active-background)";
-    el.style.color = "var(--explorer-item-active-foreground)";
+    el.classList.add("active");
     el.onmouseenter = null;
     el.onmouseleave = null;
   } else {
-    el.style.background = "";
-    el.style.color = "var(--explorer-foreground)";
-    el.onmouseenter = () => {
-      el.style.background = "var(--explorer-item-hover-background)";
-      el.style.color = "var(--explorer-item-hover-foreground)";
-    };
-    el.onmouseleave = () => {
-      el.style.background = "";
-      el.style.color = "var(--explorer-foreground)";
-    };
+    el.classList.remove("active");
+    el.onmouseenter = null;
+    el.onmouseleave = null;
   }
 }
 
@@ -213,15 +199,14 @@ export function VirtualTree(
     }
 
     if (is_loading) {
-      caret.style.transition = "none";
-      caret.style.animation = "vt-spin 1s linear infinite";
-      caret.style.transform = "rotate(0deg)";
+      caret.classList.remove("open");
+      caret.classList.add("loading");
     } else {
-      caret.style.animation = "";
-      const target = is_open ? "rotate(90deg)" : "rotate(0deg)";
-      if (caret.style.transform !== target) {
-        caret.style.transition = "transform 0.2s cubic-bezier(0.4, 0, 0.2, 1)";
-        caret.style.transform = target;
+      caret.classList.remove("loading");
+      if (is_open) {
+        caret.classList.add("open");
+      } else {
+        caret.classList.remove("open");
       }
     }
   };
@@ -230,24 +215,22 @@ export function VirtualTree(
 
   const ensure_root_node = () => {
     if (root_node_el && el.contains(root_node_el)) {
-      const label = root_node_el.querySelector<HTMLElement>(".root-node-label");
+      const label = root_node_el.querySelector<HTMLElement>(
+        ".vt-root-node-label",
+      );
       if (label) label.textContent = opts.folderStructure.root.name;
       return;
     }
 
     const root_label = h(
       "span",
-      {
-        class: "root-node-label",
-        style:
-          "overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:400;",
-      },
+      { class: "vt-root-node-label" },
       opts.folderStructure.root.name,
     );
 
     const root_actions = h(
       "div",
-      { style: "display:flex;align-items:center;gap:4px;" },
+      { class: "vt-root-actions" },
       Button(icon("file-add"), {
         variant: "ghost",
         onClick(e) {
@@ -270,11 +253,7 @@ export function VirtualTree(
 
     root_node_el = h(
       "div",
-      {
-        class: "root-node",
-        style:
-          "padding:0 8px;display:flex;align-items:center;justify-content:space-between;color:var(--explorer-foreground);user-select:none;",
-      },
+      { class: "vt-root-node" },
       root_label,
       root_actions,
     );
@@ -302,6 +281,8 @@ export function VirtualTree(
       setTimeout(async () => {
         try {
           const raw = await fileSystemService.readTree(folder_node.path);
+
+          console.log(raw, folder_node.path);
 
           let result_id: string;
           let child_nodes: Node[];
@@ -506,10 +487,7 @@ export function VirtualTree(
 
   const is_active = (id: string) => uris_equal(id, selected.id);
 
-  const scroll = ScrollArea({
-    // style:
-    //   "display:flex;flex-direction:column;overflow:hidden;height:100%;padding:0 8px;",
-  });
+  const scroll = ScrollArea({});
   const el = scroll.el;
 
   const is_typing_target = (t: EventTarget | null) => {
@@ -584,7 +562,6 @@ export function VirtualTree(
     items: rows,
     itemHeight: opts.rowHeight,
     height: opts.height,
-    // style: "min-height:0;min-width:0;overflow:hidden;",
     overscan: 8,
     cache: false,
     scrollViewport: scroll.viewport,
@@ -641,7 +618,6 @@ export function VirtualTree(
           depth: row.depth,
           currentName: row.label,
           isFolder: row.node.type === "folder",
-          // get_icon: opts.get_icon,
           icon_folder_name: opts.icon_folder_name,
           onComplete: async (old_uri: string, new_uri: string) => {
             editing_node_id = null;
@@ -666,16 +642,14 @@ export function VirtualTree(
       const caret =
         row.node.type === "folder" &&
         (() => {
+          const classes = ["vt-caret"];
+          if (is_open) classes.push("open");
+          if (is_loading) classes.push("loading");
+
           const span = h("span", {
             "data-caret": "1",
             "data-loading": is_loading ? "1" : "0",
-            style: [
-              "display:inline-flex;align-items:center;margin-right:4px;opacity:0.7;",
-              `transform:rotate(${is_open ? "90deg" : "0deg"});`,
-              is_loading
-                ? "animation:vt-spin 1s linear infinite;transition:none;"
-                : "",
-            ].join(""),
+            class: classes.join(" "),
           });
 
           const iconEl = icon(is_loading ? "loader-circle" : "chevron-right");
@@ -686,35 +660,20 @@ export function VirtualTree(
         })();
 
       const file_icon =
-        row.node.type !== "folder" &&
-        h("span", {
-          style: "width:16px;height:16px;margin-right:4px;",
-        });
+        row.node.type !== "folder" && h("span", { class: "vt-file-icon" });
 
-      const iconName = getIconName(row.node.name);
-      const svgText = loadSvg(iconName) ?? loadSvg("file.type.default");
-      if (file_icon) (file_icon as HTMLSpanElement).innerHTML = svgText;
       if (file_icon) {
-        file_icon.querySelector("svg")!.style.width = "14px";
-        file_icon.querySelector("svg")!.style.height = "14px";
-        file_icon.querySelector("svg")!.style.display = "flex";
+        const iconName = getIconName(row.node.name);
+        const svgText = loadSvg(iconName) ?? loadSvg("file.type.default");
+        (file_icon as HTMLSpanElement).innerHTML = svgText;
       }
 
       const left = h(
         "div",
-        {
-          style: "margin-left:8px;display:flex;align-items:center;min-width:0;",
-        },
+        { class: "vt-row-left" },
         caret,
         file_icon,
-        h(
-          "span",
-          {
-            style:
-              "overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:400;",
-          },
-          row.label,
-        ),
+        h("span", { class: "vt-row-label" }, row.label),
       );
 
       const right = opts.renderRight ? opts.renderRight(row) : null;
@@ -723,11 +682,8 @@ export function VirtualTree(
         "div",
         {
           "data-row-id": row.id,
-          style: [
-            "position:relative;display:flex;align-items:center;justify-content:space-between;",
-            "user-select:none;cursor:pointer;font-size:12.5px;border-radius:7px;",
-            `padding-left:${row.depth * 1.4}rem;`,
-          ].join(""),
+          class: active ? "vt-row active" : "vt-row",
+          style: `padding-left:${row.depth * 1.4}rem;`,
           on: {
             click: (e: MouseEvent) => {
               if (e.button !== 0) return;
@@ -750,7 +706,7 @@ export function VirtualTree(
         right ?? "",
       );
 
-      apply_active(row_el, active);
+      if (active) prev_active_el = row_el;
 
       row_el.oncontextmenu = async () => {
         selected.id = norm(row.id);
