@@ -177,7 +177,7 @@ async function buildPackage(pkg: {
     main: rootExport?.require ?? `./cjs/index.js`,
     module: rootExport?.import ?? `./esm/index.js`,
     types: rootExport?.types ?? `./types/${pkg.typesBase}/index.d.ts`,
-    exports: exportsMap,
+    exports: { ...exportsMap, "./static-css/*": "./static-css/*" },
     peerDependencies: pkgJson.peerDependencies ?? {},
     dependencies: pkgJson.dependencies ?? {},
     sideEffects: false,
