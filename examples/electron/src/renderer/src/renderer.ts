@@ -7,46 +7,78 @@ import {
   ExplorerService,
   StorageService
 } from '@ridit/editor-services/browser'
+import { ThemeService } from '../../../../../packages/services/src/ThemeService'
 
 function init(): void {
   window.addEventListener('DOMContentLoaded', async () => {
     const eventEmitter = new EventEmitter()
 
-    const storageService = new StorageService()
-    await storageService.start(window, 'electron', 'mystore2')
+    const storageService = new StorageService(window, 'electron', 'mystore2')
+    await storageService.start()
 
     const lspService = new LspService(eventEmitter, {
       disableInBuiltTypescriptWorker: true,
-      defaultWorkspaceFolder: '/src'
+      defaultWorkspaceFolder: 'E:\\projects\\editor\\examples\\web'
     })
 
     const fileSystem = new FileSystemService(eventEmitter, window, {
-      mode: 'virtual',
+      mode: 'real',
       name: 'MyVirtualSystem'
     })
 
-    await fileSystem.writeFile('/src/renderer.py', "print('Hello Worldd asd asd asd!!!!')")
+    //     await fileSystem.writeFile(
+    //       '/src/main.ts',
+    //       `
+    // function greet(name: string): string {
+    //   return \`Hello, \${name}!\`
+    // }
 
-    await fileSystem.writeFile('/src/renderer.css', "print('Hello Worl asda sdasd asd!!!!')")
+    // console.log(greet('World'))`
+    //     )
 
-    await fileSystem.writeFile('/src/renderer.html', "print('Hello World! asdasdas da!!!')")
+    //     await fileSystem.writeFile(
+    //       '/src/style.css',
+    //       `/* CSS example */
+    // .container {
+    //   display: flex;
+    //   padding: 1rem;
+    //   background: #1a1f29;
+    // }`
+    //     )
+
+    //     await fileSystem.writeFile(
+    //       '/src/index.html',
+    //       `<!-- HTML example -->
+    // <!DOCTYPE html>
+    // <html>
+    //   <head>
+    //     <title>My App</title>
+    //   </head>
+    //   <body>
+    //     <div id="root"></div>
+    //   </body>
+    // </html>`
+    //     )
 
     const explorerService = new ExplorerService(eventEmitter, {
       services: {
         fileSystem: fileSystem
       },
-      rootPath: '/src'
+      rootPath: 'E:\\projects\\editor\\examples\\web'
     })
+
+    const themeService = new ThemeService(eventEmitter)
 
     const editorService = new EditorService(eventEmitter, {
       services: {
-        LspService: lspService,
+        lspService,
         fileSystem,
         explorerService,
+        themeService,
         storageService
       },
       editorConfig: {
-        fontSize: 24
+        fontSize: 20
       },
       theme: 'Dark'
     })
@@ -55,20 +87,19 @@ function init(): void {
       services: {
         editorService,
         explorerService,
-        storageService
+        storageService,
+        themeService
       },
       config: {
-        fontSize: {
-          size: 18,
-          applyGlobally: true
-        },
-        fontFamily: 'monospace'
+        fontSize: 18,
+        fontFamily: 'monospace',
+        activityBarDirection: 'horizontal'
       }
     })
 
     await workbenchService.mount(document, window)
 
-    await editorService.open('/src/renderer.py')
+    // await editorService.open('/src/index.html')
   })
 }
 

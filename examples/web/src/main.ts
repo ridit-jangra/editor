@@ -5,26 +5,22 @@ import {
   WorkbenchService,
   ExplorerService,
   StorageService,
-  type ITheme,
 } from "@ridit/editor-services/browser";
 
 async function init() {
   const eventEmitter = new EventEmitter();
 
-  // Storage service (browser localStorage)
-  const storageService = new StorageService();
-  await storageService.start(window, "web", "editor-web-store");
+  const storageService = new StorageService(window, "web", "editor-web-store");
+  await storageService.start();
 
-  // Virtual file system
   const fileSystem = new FileSystemService(eventEmitter, window, {
     mode: "virtual",
     name: "WebVirtualFS",
   });
 
-  // Create some example files
   await fileSystem.writeFile(
     "/src/main.ts",
-    `// TypeScript example
+    `
 function greet(name: string): string {
   return \`Hello, \${name}!\`
 }
@@ -56,7 +52,6 @@ console.log(greet('World'))`,
 </html>`,
   );
 
-  // Explorer service
   const explorerService = new ExplorerService(eventEmitter, {
     services: {
       fileSystem,
@@ -64,13 +59,11 @@ console.log(greet('World'))`,
     rootPath: "/src",
   });
 
-  // Editor service (no LSP in browser for now)
   const editorService = new EditorService(eventEmitter, {
     services: {
       fileSystem,
       explorerService,
       storageService,
-      // LspService omitted for web
     },
     editorConfig: {
       fontSize: 16,
@@ -79,7 +72,6 @@ console.log(greet('World'))`,
     theme: "Dark",
   });
 
-  // Workbench service
   const workbenchService = new WorkbenchService(eventEmitter, {
     services: {
       editorService,
@@ -87,29 +79,22 @@ console.log(greet('World'))`,
       storageService,
     },
     config: {
-      fontSize: {
-        size: 14,
-        applyGlobally: true,
-      },
+      fontSize: 14,
       fontFamily: "'Monaco', 'Consolas', monospace",
     },
   });
 
-  // Mount everything
   await workbenchService.mount(document, window);
 
-  // Open first file
   await editorService.open("/src/main.ts");
 }
 
-// Start when DOM is ready
 if (document.readyState === "loading") {
   document.addEventListener("DOMContentLoaded", init);
 } else {
   init();
 }
 
-// Error handling
 window.addEventListener("error", (e) => {
   console.error("Editor error:", e.error);
   const app = document.getElementById("app");

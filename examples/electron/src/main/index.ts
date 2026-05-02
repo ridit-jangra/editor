@@ -7,21 +7,15 @@ import icon from '../../resources/icon.png?asset'
 const eventEmitter = new EventEmitter()
 
 function createWindow(): void {
-  // Create the browser window.
-  const mainWindow = new BrowserWindow({
-    width: 900,
-    height: 670,
-    show: false,
-    autoHideMenuBar: true,
-    ...(process.platform === 'linux' ? { icon } : {}),
-    webPreferences: {
-      preload: join(__dirname, '../preload/index.js')
-      // sandbox: false
-    }
+  const mainService = new MainProcessService(eventEmitter)
+
+  const mainWindow = mainService.createWindow({
+    preload: join(__dirname, '../preload/index.js'),
+    icon
+    // titlebarWindowControls: 'separate'
   })
 
-  const ipcService = new MainProcessService(eventEmitter)
-  ipcService.start(ipcMain)
+  mainService.registerIPCHandlers()
 
   mainWindow.on('ready-to-show', () => {
     mainWindow.show()
