@@ -13,6 +13,12 @@ npm install @ridit/editor-services
 The fastest way to get started. `Workbench` presets wire all services together with sensible defaults.
 
 ```typescript
+import editor_worker from "monaco-editor/esm/vs/editor/editor.worker?worker";
+import json_worker from "monaco-editor/esm/vs/language/json/json.worker?worker";
+import css_worker from "monaco-editor/esm/vs/language/css/css.worker?worker";
+import html_worker from "monaco-editor/esm/vs/language/html/html.worker?worker";
+import ts_worker from "monaco-editor/esm/vs/language/typescript/ts.worker?worker";
+
 import { Workbench } from "@ridit/editor-services/workbench";
 
 // Electron
@@ -22,7 +28,14 @@ const workbench = await Workbench.createElectron({
   config: { fontSize: 16, fontFamily: "monospace" },
   editorConfig: { fontSize: 15 },
   theme: "Dark", // 'Dark' | 'Light'
-  storeName: "my-app", // optional, for tab persistence
+  storeName: "my-app", // optional, for tab persistence,
+  workerFactories: {
+    editor: editor_worker,
+    css: css_worker,
+    html: html_worker,
+    json: json_worker,
+    typescript: ts_worker,
+  },
 });
 await workbench.mount(document, window);
 
@@ -41,6 +54,12 @@ await workbench.mount(document, window);
 For full control, compose services individually.
 
 ```typescript
+import editor_worker from "monaco-editor/esm/vs/editor/editor.worker?worker";
+import json_worker from "monaco-editor/esm/vs/language/json/json.worker?worker";
+import css_worker from "monaco-editor/esm/vs/language/css/css.worker?worker";
+import html_worker from "monaco-editor/esm/vs/language/html/html.worker?worker";
+import ts_worker from "monaco-editor/esm/vs/language/typescript/ts.worker?worker";
+
 import {
   EventEmitter,
   FileSystemService,
@@ -72,6 +91,13 @@ const editorService = new EditorService(eventEmitter, {
   services: { fileSystem, explorerService, themeService, storageService },
   theme: "Dark",
   editorConfig: { fontSize: 15 },
+  workerFactories: {
+    editor: editor_worker,
+    css: css_worker,
+    html: html_worker,
+    json: json_worker,
+    typescript: ts_worker,
+  },
 });
 
 const workbench = new WorkbenchService(eventEmitter, {

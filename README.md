@@ -14,6 +14,12 @@ A modular, embeddable code editor built on Monaco. Drop a full VS Code-like work
 ### Electron
 
 ```typescript
+import editor_worker from "monaco-editor/esm/vs/editor/editor.worker?worker";
+import json_worker from "monaco-editor/esm/vs/language/json/json.worker?worker";
+import css_worker from "monaco-editor/esm/vs/language/css/css.worker?worker";
+import html_worker from "monaco-editor/esm/vs/language/html/html.worker?worker";
+import ts_worker from "monaco-editor/esm/vs/language/typescript/ts.worker?worker";
+
 import { Workbench } from "@ridit/editor-services/workbench";
 
 window.addEventListener("DOMContentLoaded", async () => {
@@ -22,6 +28,13 @@ window.addEventListener("DOMContentLoaded", async () => {
     lsp: { disableInBuiltTypescriptWorker: true },
     config: { fontSize: 16, fontFamily: "monospace" },
     editorConfig: { fontSize: 15 },
+    workerFactories: {
+      editor: editor_worker,
+      css: css_worker,
+      html: html_worker,
+      json: json_worker,
+      typescript: ts_worker,
+    },
   });
 
   await workbench.mount(document, window);
@@ -31,12 +44,25 @@ window.addEventListener("DOMContentLoaded", async () => {
 ### Web (Virtual Filesystem)
 
 ```typescript
+import editor_worker from "monaco-editor/esm/vs/editor/editor.worker?worker";
+import json_worker from "monaco-editor/esm/vs/language/json/json.worker?worker";
+import css_worker from "monaco-editor/esm/vs/language/css/css.worker?worker";
+import html_worker from "monaco-editor/esm/vs/language/html/html.worker?worker";
+import ts_worker from "monaco-editor/esm/vs/language/typescript/ts.worker?worker";
+
 import { Workbench } from "@ridit/editor-services/workbench";
 
 const workbench = await Workbench.createWeb({
   rootPath: "/my-project",
   virtualFsName: "my-project-fs",
   config: { fontSize: 16 },
+  workerFactories: {
+    editor: editor_worker,
+    css: css_worker,
+    html: html_worker,
+    json: json_worker,
+    typescript: ts_worker,
+  },
 });
 
 await workbench.mount(document, window);
