@@ -20,6 +20,14 @@ type StatusbarItemInstance = {
   setText(t: string | null): void;
 };
 
+type Pending = {
+  language: string | null;
+  lineCol: { line: number; col: number } | null;
+  indentation: number | null;
+  encoding: string | null;
+  fileName: string | null;
+};
+
 function createItem(
   document: Document,
   classes: string,
@@ -59,6 +67,14 @@ export class StatusbarComponent {
   private languageItem: StatusbarItemInstance | null = null;
   private leftEl: HTMLElement | null = null;
 
+  private pending: Pending = {
+    language: null,
+    lineCol: null,
+    indentation: null,
+    encoding: null,
+    fileName: null,
+  };
+
   constructor(
     private eventEmitter: EventEmitter,
     private classes: ComponentClasses,
@@ -71,18 +87,22 @@ export class StatusbarComponent {
       ({ line, col }: { line: number; col: number }) =>
         this.setLineCol(line, col),
     );
-    eventEmitter.on(STATUSBAR_SET_LANGUAGE, (lang: string | null) =>
-      this.setLanguage(lang),
-    );
-    eventEmitter.on(STATUSBAR_SET_INDENTATION, (spaces: number | null) =>
-      this.setIndentation(spaces),
-    );
-    eventEmitter.on(STATUSBAR_SET_ENCODING, (enc: string | null) =>
-      this.setEncoding(enc),
-    );
-    eventEmitter.on(STATUSBAR_SET_FILENAME, (name: string) =>
-      this.setFileName(name),
-    );
+    eventEmitter.on(STATUSBAR_SET_LANGUAGE, (lang: string | null) => {
+      console.log("[Statusbar] language:", lang);
+      this.setLanguage(lang);
+    });
+    eventEmitter.on(STATUSBAR_SET_ENCODING, (enc: string | null) => {
+      console.log("[Statusbar] encoding:", enc);
+      this.setEncoding(enc);
+    });
+    eventEmitter.on(STATUSBAR_SET_LINE_COL, ({ line, col }) => {
+      console.log("[Statusbar] lineCol:", line, col);
+      this.setLineCol(line, col);
+    });
+    eventEmitter.on(STATUSBAR_SET_FILENAME, (name: string) => {
+      console.log("[Statusbar] filename:", name);
+      this.setFileName(name);
+    });
   }
 
   render(document: Document): HTMLElement {
@@ -96,7 +116,6 @@ export class StatusbarComponent {
     this.leftEl = left;
 
     this.messageItem = createItem(document, this.classes.statusBarItem);
-
     this.lineColItem = createItem(document, this.classes.statusBarItem);
     this.indentItem = createItem(document, this.classes.statusBarItem);
     this.encodingItem = createItem(document, this.classes.statusBarItem);
@@ -114,6 +133,15 @@ export class StatusbarComponent {
     root.appendChild(right);
 
     this.rootEl = root;
+
+    // flush buffered values that arrived before render()
+    if (this.pending.fileName) this.setFileName(this.pending.fileName);
+    if (this.pending.language) this.setLanguage(this.pending.language);
+    if (this.pending.lineCol)
+      this.setLineCol(this.pending.lineCol.line, this.pending.lineCol.col);
+    if (this.pending.indentation) this.setIndentation(this.pending.indentation);
+    if (this.pending.encoding) this.setEncoding(this.pending.encoding);
+
     return root;
   }
 
@@ -129,6 +157,7 @@ export class StatusbarComponent {
   }
 
   setFileName(name: string) {
+    this.pending.fileName = name;
     if (!this.leftEl) return;
     this.leftEl.textContent = name;
   }
@@ -140,20 +169,24 @@ export class StatusbarComponent {
   }
 
   setLineCol(line: number | null, col: number | null) {
+    this.pending.lineCol = line !== null && col !== null ? { line, col } : null;
     this.lineColItem?.setText(
       line !== null && col !== null ? `Ln ${line}, Col ${col}` : null,
     );
   }
 
   setIndentation(spaces: number | null) {
+    this.pending.indentation = spaces;
     this.indentItem?.setText(spaces !== null ? `Spaces: ${spaces}` : null);
   }
 
   setEncoding(encoding: string | null) {
+    this.pending.encoding = encoding;
     this.encodingItem?.setText(encoding);
   }
 
   setLanguage(language: string | null) {
+    this.pending.language = language;
     this.languageItem?.setText(language);
   }
 
