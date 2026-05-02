@@ -19,13 +19,6 @@ import { TabComponent } from "./basic-components/Tabs";
 
 export type BasicTheme = "Dark" | "Light";
 
-export type WorkbenchConfig = {
-  fontSize: number;
-  fontFamily?: string;
-  sidebarWidth?: number;
-  activityBarDirection?: ActivityBarConfig["direction"];
-};
-
 export type TitlebarFactory = (classes: ComponentClasses) => {
   render(document: Document): HTMLElement;
 };
@@ -78,10 +71,17 @@ const basicThemeMap: Record<BasicTheme, ITheme> = {
   Light: LightTheme,
 };
 
+export type WorkbenchConfig = {
+  fontSize: number;
+  fontFamily?: string;
+  sidebarWidth?: number;
+  activityBarDirection?: ActivityBarConfig["direction"];
+};
+
 const defaultConfig: WorkbenchConfig = {
   fontSize: 16,
   sidebarWidth: 20,
-  activityBarDirection: "vertical",
+  activityBarDirection: "horizontal",
 };
 
 export type WorkbenchRequiredServices = {
@@ -299,7 +299,7 @@ export class WorkbenchService extends Service {
         },
       },
     );
-    await this.tabService.start();
+    // await this.tabService.start();
     editorAreaEl.prepend(tabComponent.render(document));
 
     root.appendChild(middle);
@@ -318,9 +318,12 @@ export class WorkbenchService extends Service {
 
     this.editorService.start(window);
     await this.editorService.mount(el, this.tabService);
-    this.mounted = true;
+
+    await this.tabService.start();
 
     this.tabService.hideOrShowEditor();
+
+    this.mounted = true;
   }
 
   /**
