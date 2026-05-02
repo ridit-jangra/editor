@@ -14,7 +14,7 @@ import {
 import { Splitter } from "../../../ui/src/index";
 import { ExplorerService } from "../ExplorerService";
 import { StorageService } from "../StorageService";
-import { TabService } from "../TabService";
+import { Tab, TabService } from "../TabService";
 import { TabComponent } from "./basic-components/Tabs";
 
 export type BasicTheme = "Dark" | "Light";
@@ -23,7 +23,6 @@ export type WorkbenchConfig = {
   fontSize: number;
   fontFamily?: string;
   sidebarWidth?: number;
-  /** Layout direction of the activity bar. Default: "vertical" */
   activityBarDirection?: ActivityBarConfig["direction"];
 };
 
@@ -56,7 +55,7 @@ export type TabBarFactory = (
   classes: ComponentClasses,
 ) => {
   render(document: Document): HTMLElement;
-  setTabs(tabs: any[]): void;
+  setTabs(tabs: Tab[]): void;
 };
 
 export type ActivityBarItem = {
@@ -204,7 +203,7 @@ export class WorkbenchService extends Service {
     );
 
     this.activityBarInstance.register({
-      icon: "files",
+      icon: "folder",
       id: "explorer",
       panel: () => tree.el,
       tooltip: "Explorer",
@@ -260,7 +259,7 @@ export class WorkbenchService extends Service {
             el: editorAreaEl,
           },
         ],
-        gutterSize: 4,
+        gutterSize: 1,
         onCollapse: (id, collapsed) => {
           console.log(
             `[WorkbenchService] panel "${id}" collapsed: ${collapsed}`,
@@ -288,10 +287,19 @@ export class WorkbenchService extends Service {
       this.eventEmitter,
       this.classes,
     );
-    this.tabService = new TabService(this.eventEmitter, {
-      onTabUpdate: (tabs) => tabComponent.setTabs(tabs),
-    });
-    this.tabService.start();
+    this.tabService = new TabService(
+      this.eventEmitter,
+      {
+        onTabUpdate: (tabs) => tabComponent.setTabs(tabs),
+      },
+      {
+        services: {
+          storageService: this.storageService,
+          editorService: this.editorService,
+        },
+      },
+    );
+    await this.tabService.start();
     editorAreaEl.prepend(tabComponent.render(document));
 
     root.appendChild(middle);
@@ -311,18 +319,8 @@ export class WorkbenchService extends Service {
     this.editorService.start(window);
     await this.editorService.mount(el, this.tabService);
     this.mounted = true;
-  }
 
-  /**
-   * Register a new activity bar panel at runtime.
-   * Safe to call before or after mount() — queued if called before.
-   */
-  registerComponent(item: ActivityBarItem): void {
-    if (this.activityBarInstance) {
-      this.activityBarInstance.register(item);
-    } else {
-      this.pendingActivityBarItems.push(item);
-    }
+    this.tabService.hideOrShowEditor();
   }
 
   /**

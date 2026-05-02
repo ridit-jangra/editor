@@ -1,11 +1,11 @@
 import { EventEmitter } from "../../../emitter";
 import type { ComponentClasses } from "../../components";
 import type { Tab } from "../../../TabService";
+import { getIconName, loadSvg } from "../../utils";
 
 export class TabComponent {
   private root: HTMLElement | null = null;
   private tabs: Tab[] = [];
-  private activeTabId: string | null = null;
 
   constructor(
     private eventEmitter: EventEmitter,
@@ -25,9 +25,27 @@ export class TabComponent {
     this.renderTabs();
   }
 
-  setActive(id: string) {
-    this.activeTabId = id;
-    this.updateActiveState();
+  private setActive(id: string) {
+    let changed = false;
+
+    this.tabs.forEach((tab) => {
+      if (tab.id === id) {
+        if (!tab.active) {
+          tab.active = true;
+          changed = true;
+        }
+      } else {
+        if (tab.active) {
+          tab.active = false;
+          changed = true;
+        }
+      }
+    });
+
+    if (changed) {
+      this.updateActiveState();
+      this.eventEmitter.emit("tab:active", id);
+    }
   }
 
   private renderTabs() {
@@ -39,32 +57,41 @@ export class TabComponent {
       const tabEl = document.createElement("div");
       tabEl.className = this.classes.tab;
 
-      if (tab.id === this.activeTabId) {
-        tabEl.classList.add(this.classes.tabActive);
-      }
+      const icon = document.createElement("span");
+
+      const iconName = getIconName(tab.name);
+      const svgText = loadSvg(iconName) ?? loadSvg("file.type.default");
+      icon.innerHTML = svgText;
+
+      icon.querySelector("svg")!.style.width = "14px";
+      icon.querySelector("svg")!.style.height = "14px";
+      icon.querySelector("svg")!.style.display = "flex";
 
       const label = document.createElement("span");
       label.textContent = tab.name;
 
       const close = document.createElement("span");
       close.className = "codicon codicon-close";
-      close.style.marginLeft = "8px";
+      // close.style.marginLeft = "8px";
 
-      // events
       tabEl.addEventListener("click", () => {
+        this.setActive(tab.id);
         this.eventEmitter.emit("tab:click", tab.id);
       });
 
       close.addEventListener("click", (e) => {
         e.stopPropagation();
-        this.eventEmitter.emit("tab:close", tab.id);
+        this.eventEmitter.emit("tab:removeTab", tab.id);
       });
 
+      tabEl.appendChild(icon);
       tabEl.appendChild(label);
       tabEl.appendChild(close);
 
       this.root.appendChild(tabEl);
     }
+
+    this.updateActiveState();
   }
 
   private updateActiveState() {
@@ -76,7 +103,7 @@ export class TabComponent {
       const tab = this.tabs[index];
       if (!tab) return;
 
-      if (tab.id === this.activeTabId) {
+      if (tab.active) {
         el.classList.add(this.classes.tabActive);
       } else {
         el.classList.remove(this.classes.tabActive);
