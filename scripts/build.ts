@@ -3,6 +3,7 @@
 import { $ } from "bun";
 import { join, resolve } from "path";
 import { readFileSync, writeFileSync } from "fs";
+import { cp } from "fs/promises";
 
 const ROOT = join(import.meta.dir, "..");
 
@@ -35,7 +36,6 @@ function getExternals(pkgDir: string): string[] {
   return [
     ...Object.keys(pkg.dependencies ?? {}),
     ...Object.keys(pkg.peerDependencies ?? {}),
-    // strip vite-specific suffixes — these must be handled by the consumer's bundler
     "monaco-editor/esm/vs/editor/editor.worker?worker",
     "monaco-editor/esm/vs/language/json/json.worker?worker",
     "monaco-editor/esm/vs/language/css/css.worker?worker",
@@ -86,7 +86,6 @@ function buildExportsMap(
 
     if (!raw?.startsWith("./src/")) continue;
 
-    // ./src/exports/browser.ts → exports/browser
     const rel = raw.replace("./src/", "").replace(/\.ts$/, "");
 
     result[key] = {
@@ -97,6 +96,14 @@ function buildExportsMap(
   }
 
   return result;
+}
+
+// helper for copying folders
+async function copyDir(src: string, dest: string) {
+  await cp(src, dest, {
+    recursive: true,
+    force: true,
+  });
 }
 
 async function buildPackage(pkg: {
@@ -114,7 +121,9 @@ async function buildPackage(pkg: {
 
   const entrypoints = resolveEntrypoints(pkg.dir);
   console.log(
-    `  entrypoints: ${entrypoints.map((e) => e.replace(pkg.dir, "")).join(", ")}`,
+    `  entrypoints: ${entrypoints
+      .map((e) => e.replace(pkg.dir, ""))
+      .join(", ")}`,
   );
 
   const externals = getExternals(pkg.dir);
@@ -144,7 +153,10 @@ async function buildPackage(pkg: {
 
   // --- Types ---
   console.log(`  → Types`);
-  await $`bunx tsc --project "${tsconfigPath}" --emitDeclarationOnly --declaration --declarationDir "${join(outDir, "types")}" --noEmit false --noUnusedLocals false --noUnusedParameters false`.cwd(
+  await $`bunx tsc --project "${tsconfigPath}" --emitDeclarationOnly --declaration --declarationDir "${join(
+    outDir,
+    "types",
+  )}" --noEmit false --noUnusedLocals false --noUnusedParameters false`.cwd(
     pkg.dir,
   );
 
@@ -180,6 +192,19 @@ async function buildPackage(pkg: {
   try {
     await $`cp ${join(pkg.dir, "README.md")} ${join(outDir, "README.md")}`;
   } catch {}
+
+  // --- copy static CSS (editor-ui only) ---
+  if (pkg.name === "@ridit/editor-ui") {
+    try {
+      await copyDir(
+        join(pkg.dir, "src/static-css"),
+        join(outDir, "static-css"),
+      );
+      console.log(`  → static-css copied`);
+    } catch (err) {
+      console.warn("  ⚠ failed to copy static-css", err);
+    }
+  }
 
   console.log(`  ✓ ${pkg.name} built`);
 }

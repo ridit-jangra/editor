@@ -9,7 +9,7 @@
     "type": "git",
     "url": "https://github.com/ridit-jangra/editor"
   },
-  "version": "0.1.8",
+  "version": "0.1.9",
   "exports": {
     "./static-css/workbench.css": "./static-css/workbench.css",
     ".": "./src/index.ts"
