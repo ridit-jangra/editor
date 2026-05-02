@@ -1,0 +1,47 @@
+.wb-status-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 22px;
+  padding: 0 8px;
+  background: var(--wb-status-bg);
+  color: var(--wb-status-fg);
+  font-size: 12px;
+  user-select: none;
+  flex-shrink: 0;
+}
+
+.wb-statusbar-primary-section {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  opacity: 0.8;
+}
+
+.wb-statusbar-secondary-section {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  margin-left: auto;
+}
+
+.wb-status-bar-item {
+  display: flex;
+  align-items: center;
+  padding: 0 8px;
+  height: 22px;
+  cursor: pointer;
+  white-space: nowrap;
+  border-radius: 4px;
+  transition: background 0.1s ease;
+  color: var(--wb-status-fg);
+}
+
+.wb-status-bar-item:hover {
+  background: var(--wb-status-hover-bg);
+  color: var(--wb-status-hover-fg);
+}

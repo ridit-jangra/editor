@@ -1,0 +1,94 @@
+.vt-root-node {
+  padding: 0 8px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  color: var(--explorer-foreground);
+  user-select: none;
+}
+
+.vt-root-node-label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-weight: 400;
+}
+
+.vt-root-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.vt-row {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  user-select: none;
+  cursor: pointer;
+  font-size: 12.5px;
+  border-radius: 7px;
+  color: var(--explorer-foreground);
+}
+
+.vt-row:hover {
+  background: var(--explorer-item-hover-background);
+  color: var(--explorer-item-hover-foreground);
+}
+
+.vt-row.active {
+  background: var(--explorer-item-active-background);
+  color: var(--explorer-item-active-foreground);
+}
+
+.vt-row.active:hover {
+  background: var(--explorer-item-active-background);
+  color: var(--explorer-item-active-foreground);
+}
+
+.vt-row-left {
+  margin-left: 8px;
+  display: flex;
+  align-items: center;
+  min-width: 0;
+}
+
+.vt-row-label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-weight: 400;
+}
+
+.vt-caret {
+  display: inline-flex;
+  align-items: center;
+  margin-right: 4px;
+  opacity: 0.7;
+  transform: rotate(0deg);
+  transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.vt-caret.open {
+  transform: rotate(90deg);
+}
+
+.vt-caret.loading {
+  animation: vt-spin 1s linear infinite;
+  transition: none;
+  transform: rotate(0deg);
+}
+
+.vt-file-icon {
+  width: 16px;
+  height: 16px;
+  margin-right: 4px;
+  display: inline-flex;
+  align-items: center;
+}
+
+.vt-file-icon svg {
+  width: 16px;
+  height: 16px;
+}

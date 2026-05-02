@@ -1,5 +1,7 @@
 @import "./codicon.css";
 @import "./components/contextMenu.css";
+@import "./components/virtualTree.css";
+@import "./components/statusbar.css";
 
 *,
 *::before,
