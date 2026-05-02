@@ -10,6 +10,7 @@
     "typescript": "^5"
   },
   "dependencies": {
+    "@ridit/ai": "^0.1.6",
     "@ridit/dev": "^0.2.4"
   }
 }
