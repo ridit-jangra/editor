@@ -36,12 +36,16 @@ export function create_add_node_input(opts: AddNodeOptions): HTMLElement {
     ),
   }) as HTMLInputElement;
 
-  let icon: HTMLElement;
+  let iconEl: HTMLElement;
   if (type === "folder") {
-    icon = h("span", { class: "ml-2 opacity-70 mr-1" }, icon("chevron-right"));
+    iconEl = h(
+      "span",
+      { class: "ml-2 opacity-70 mr-1" },
+      icon("chevron-right"),
+    );
   } else {
-    icon = h("img", { class: "ml-2 w-4 h-4 mr-1" }) as HTMLImageElement;
-    (icon as HTMLImageElement).src = `./file-icons/${opts.name}`;
+    iconEl = h("img", { class: "ml-2 w-4 h-4 mr-1" }) as HTMLImageElement;
+    (iconEl as HTMLImageElement).src = `./file-icons/${opts.name}`;
   }
 
   const container = h(
@@ -53,7 +57,7 @@ export function create_add_node_input(opts: AddNodeOptions): HTMLElement {
       ),
       style: `padding-left:${6 + depth * indent}px;`,
     },
-    icon,
+    iconEl,
     input,
   );
 
@@ -100,7 +104,7 @@ export function create_add_node_input(opts: AddNodeOptions): HTMLElement {
   input.oninput = (e) => {
     if (type === "file") {
       const v = (e.currentTarget as HTMLInputElement).value;
-      (icon as HTMLImageElement).src = `./file-icons/${v}`;
+      (iconEl as HTMLImageElement).src = `./file-icons/${v}`;
     }
   };
 

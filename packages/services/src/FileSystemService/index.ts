@@ -27,8 +27,8 @@ export class FileSystemService extends Service implements IFileSystem {
   private fs: IFileSystem;
 
   constructor(
-    private eventEmitter: EventEmitter,
-    private window: any,
+    eventEmitter: EventEmitter,
+    window: any,
     { mode, name }: FileSystemServiceOptions,
   ) {
     super("FileSystemService");

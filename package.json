@@ -3,6 +3,7 @@
   "private": true,
   "devDependencies": {
     "@types/bun": "latest",
+    "@types/ws": "^8.18.1",
     "electron-vite": "^5.0.0"
   },
   "peerDependencies": {
@@ -11,5 +12,17 @@
   "workspaces": [
     "packages/*",
     "examples/*"
-  ]
+  ],
+  "scripts": {
+    "build": "bun run scripts/build.ts",
+    "build:services": "bun run scripts/build.ts @ridit/editor-services",
+    "build:ui": "bun run scripts/build.ts @ridit/editor-ui",
+    "release": "bun run scripts/release.ts patch",
+    "release:minor": "bun run scripts/release.ts minor",
+    "release:major": "bun run scripts/release.ts major",
+    "release:services": "bun run scripts/release.ts patch --pkg=@ridit/editor-services",
+    "release:ui": "bun run scripts/release.ts patch --pkg=@ridit/editor-ui",
+    "release:beta": "bun run scripts/release.ts patch --tag=beta",
+    "release:dry": "bun run scripts/release.ts patch --dry-run"
+  }
 }
