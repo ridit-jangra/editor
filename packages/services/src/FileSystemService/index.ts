@@ -1,10 +1,8 @@
 import { Service } from "../service";
 import { RealFileSystemService } from "../RealFileSystemService";
 import { virtualFileSystems } from "../filesystem";
-import {
-  normalize,
-  VirtualFileSystemService,
-} from "../VirtualFileSystemService";
+import { normalize } from "../VirtualFileSystemService/utils";
+import { VirtualFileSystemService } from "../VirtualFileSystemService";
 import { EventEmitter } from "../emitter";
 
 export type FileSystemServiceOptions = {
