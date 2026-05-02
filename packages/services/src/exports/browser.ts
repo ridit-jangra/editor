@@ -7,4 +7,5 @@ export { WorkbenchService } from "../WorkbenchService/index";
 export { ExplorerService } from "../ExplorerService/index";
 export { StorageService } from "../StorageService/index";
 export { TabService } from "../TabService/index.ts";
+export { ThemeService } from "../ThemeService/index.ts";
 export { type ITheme } from "../ThemeService/index.ts";
