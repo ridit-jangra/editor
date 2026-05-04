@@ -20,8 +20,18 @@ window.addEventListener('DOMContentLoaded', async () => {
       json: json_worker,
       typescript: ts_worker
     },
+    ai: {
+      enabled: true
+    },
     theme: 'Dark'
   })
 
-  await workbench.mount(document, window)
+  await workbench.aiService!.createProvider({
+    model: 'openai/gpt-oss-120b',
+    provider: 'groq',
+    apiKey: import.meta.env.VITE_API_KEY,
+    default: true
+  })
+
+  await workbench.workbenchService.mount(document, window)
 })

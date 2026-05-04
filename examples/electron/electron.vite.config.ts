@@ -49,6 +49,7 @@ export default defineConfig({
           __dirname,
           '../../packages/services/src/exports/browser.ts'
         ),
+        '@ridit/editor-ai': resolve(__dirname, '../../packages/ai/src/index.ts'),
         '@ridit/editor-services/renderer': resolve(
           __dirname,
           '../../packages/services/src/exports/renderer.ts'
@@ -61,6 +62,9 @@ export default defineConfig({
         '@ridit/editor-ui/static-css': resolve(__dirname, '../../packages/ui/src/static-css'),
         '@ridit/editor-ui': resolve(__dirname, '../../packages/ui/src/index.ts')
       }
+    },
+    optimizeDeps: {
+      exclude: ['@ridit/ai']
     }
   }
 })

@@ -25,6 +25,7 @@
     "@electron-toolkit/utils": "^4.0.0",
     "@ridit/editor-services": "workspace:*",
     "@ridit/editor-ui": "workspace:*",
+    "@ridit/editor-ai": "workspace:*",
     "@vscode/codicons": "^0.0.45",
     "bufferutil": "^4.1.0",
     "lucide-static": "^1.8.0",
