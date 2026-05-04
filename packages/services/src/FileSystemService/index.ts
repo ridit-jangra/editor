@@ -21,6 +21,7 @@ export interface IFileSystem {
   rename: (oldPath: string, newPath: string) => Promise<void>;
   getRootStructure: (path: string) => Promise<any>;
   readTree: (path: string) => Promise<any>;
+  glob: (pattern: string, opts?: { cwd?: string }) => Promise<string[]>;
 }
 
 export class FileSystemService extends Service implements IFileSystem {
@@ -84,5 +85,9 @@ export class FileSystemService extends Service implements IFileSystem {
 
   getRootStructure(path: string) {
     return this.fs.getRootStructure(normalize(path));
+  }
+
+  glob(pattern: string, opts?: { cwd?: string }) {
+    return this.fs.glob(pattern, opts);
   }
 }

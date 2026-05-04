@@ -1,5 +1,6 @@
 import { ITheme, ThemeService } from "../ThemeService";
 import { EditorService } from "../EditorService";
+import { AIService } from "../../../ai/src/AIService";
 import { EventEmitter } from "../emitter";
 import { Service } from "../service";
 import { defaultComponentClasses, type ComponentClasses } from "./components";
@@ -16,6 +17,7 @@ import { ExplorerService } from "../ExplorerService";
 import { StorageService } from "../StorageService";
 import { Tab, TabService } from "../TabService";
 import { TabComponent } from "./basic-components/Tabs";
+import { ChatComponent } from "./basic-components/Chat";
 
 export type BasicTheme = "Dark" | "Light";
 
@@ -89,6 +91,7 @@ export type WorkbenchRequiredServices = {
   explorerService: ExplorerService;
   storageService: StorageService;
   themeService?: ThemeService;
+  aiService?: AIService;
 };
 
 export type WorkbenchOptions = {
@@ -119,6 +122,7 @@ export class WorkbenchService extends Service {
   private editorService: EditorService;
   private explorerService: ExplorerService;
   private storageService: StorageService;
+  private aiService: AIService | undefined = undefined;
   private tabService: TabService | null = null;
   private classes: ComponentClasses;
   private theme: ITheme;
@@ -144,11 +148,17 @@ export class WorkbenchService extends Service {
   ) {
     super("WorkbenchService");
 
-    const { editorService, explorerService, storageService, themeService } =
-      services;
+    const {
+      editorService,
+      explorerService,
+      storageService,
+      themeService,
+      aiService,
+    } = services;
 
     this.editorService = editorService;
     this.explorerService = explorerService;
+    this.aiService = aiService;
     this.storageService = storageService;
     this.classes = { ...defaultComponentClasses, ...classes };
     this.theme = customTheme ?? basicThemeMap[theme];
@@ -281,6 +291,21 @@ export class WorkbenchService extends Service {
       this.splitter = makeSplitter(sidebarEl);
       middle.appendChild(activityBarEl);
       middle.appendChild(this.splitter.el);
+    }
+
+    if (this.aiService) {
+      const chat = new ChatComponent(this.classes, this.aiService);
+      let chatEl: HTMLElement | null = null;
+
+      this.activityBarInstance.register({
+        icon: "comment-discussion",
+        id: "chat",
+        tooltip: "Chat",
+        panel: () => {
+          if (!chatEl) chatEl = chat.render(document);
+          return chatEl;
+        },
+      });
     }
 
     const tabComponent = this.componentFactories.tabBar(

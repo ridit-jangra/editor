@@ -276,6 +276,27 @@ export class VirtualFileSystemService extends Service implements IFileSystem {
     };
   }
 
+  async glob(pattern: string, opts?: { cwd?: string }): Promise<string[]> {
+    const { minimatch } = await import("minimatch");
+    const base = opts?.cwd ?? "/";
+    const allFiles = await this.readTreeFlat(base);
+    return allFiles.filter((f) => minimatch(f, pattern));
+  }
+
+  private async readTreeFlat(dir: string): Promise<string[]> {
+    const entries = await this.readdir(dir);
+    const results: string[] = [];
+    for (const entry of entries) {
+      const full = `${dir}/${entry.name}`.replace("//", "/");
+      if (entry.isDirectory?.() || entry.type === "directory") {
+        results.push(...(await this.readTreeFlat(full)));
+      } else {
+        results.push(full);
+      }
+    }
+    return results;
+  }
+
   private insertNode(node: Node) {
     if (this.fileSystem.nodes.some((n) => n.path === node.path)) return;
     this.fileSystem.nodes.push(node);

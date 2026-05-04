@@ -17,6 +17,7 @@ import {
   STORAGE_GET,
   STORAGE_SET,
   STORAGE_CREATE_IF_NOT_EXISTS,
+  FS_GLOB,
 } from "../channels";
 import type { IpcRenderer, contextBridge as contextBridgeType } from "electron";
 
@@ -44,6 +45,7 @@ export class PreloadService extends Service {
         ipcRenderer.invoke(EXPLORER_GET_CHILD_STRUCTURE, path),
       getRootStructure: (path) =>
         ipcRenderer.invoke(EXPLORER_GET_ROOT_STRUCTURE, path),
+      glob: (pattern, opts = {}) => ipcRenderer.invoke(FS_GLOB, pattern, opts),
     };
 
     const lspBridge = {

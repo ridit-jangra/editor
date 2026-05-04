@@ -27,6 +27,7 @@ import {
   STORAGE_GET,
   STORAGE_SET,
   STORAGE_CREATE_IF_NOT_EXISTS,
+  FS_GLOB,
 } from "../channels";
 import { resolve_pylsp, resolve_python } from "../LspService/utils";
 import { IFolderStructure } from "../../../ui/src/components/VirtualTree/types";
@@ -244,6 +245,19 @@ export class MainProcessService extends Service {
       (_, key: string, value: any, storeName: string) => {
         storage.set(key, value, storeName);
         return true;
+      },
+    );
+
+    ipcMain.handle(
+      FS_GLOB,
+      async (_event, pattern: string, opts: { cwd?: string } = {}) => {
+        const { glob } = await import("glob");
+        const files = await glob(pattern, {
+          cwd: opts.cwd ?? "/",
+          absolute: true,
+          // withFileTypes: false,
+        });
+        return files;
       },
     );
 

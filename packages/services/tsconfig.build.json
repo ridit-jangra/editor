@@ -15,6 +15,6 @@
     "noUnusedParameters": false,
     "rootDir": ".."
   },
-  "include": ["src/**/*", "../ui/src/**/*"],
+  "include": ["src/**/*", "../ui/src/**/*", "../ai/src/**/*"],
   "exclude": ["node_modules", "dist"]
 }

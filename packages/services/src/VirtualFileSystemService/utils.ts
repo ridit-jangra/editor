@@ -14,7 +14,7 @@ export function join(...paths: string[]): string {
     }
   }
 
-  return "/" + parts.join("/");
+  return parts.join("/");
 }
 
 export function basename(path: string): string {
@@ -25,4 +25,11 @@ export function basename(path: string): string {
 
 export function normalize(path: string): string {
   return path;
+}
+
+export function dirname(path: string): string {
+  path = path.replace(/\\/g, "/");
+  const parts = path.split("/").filter(Boolean);
+  parts.pop();
+  return parts.join("/");
 }

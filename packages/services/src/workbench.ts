@@ -1,3 +1,4 @@
+import { AIService } from "../../ai/src/AIService";
 import { EditorService } from "./EditorService";
 import {
   MonacoEditorOptions,
@@ -22,6 +23,9 @@ export type WebPresetOptions = {
   virtualFsName?: string;
   workerFactories?: MonacoWorkerFactories;
   internalServicesFactories?: MonacoInternalServicesFactories;
+  ai?: {
+    enabled: boolean;
+  };
 };
 
 export type ElectronPresetOptions = {
@@ -35,12 +39,13 @@ export type ElectronPresetOptions = {
   storeName?: string;
   workerFactories?: MonacoWorkerFactories;
   internalServicesFactories?: MonacoInternalServicesFactories;
+  ai?: {
+    enabled: boolean;
+  };
 };
 
 export class Workbench {
-  static async createElectron(
-    opts: ElectronPresetOptions,
-  ): Promise<WorkbenchService> {
+  static async createElectron(opts: ElectronPresetOptions) {
     const eventEmitter = new EventEmitter();
 
     const storageService = new StorageService(
@@ -83,16 +88,38 @@ export class Workbench {
       workerFactories: opts.workerFactories,
     });
 
-    return new WorkbenchService(eventEmitter, {
+    let aiService: AIService | undefined = undefined;
+
+    if (opts.ai && opts.ai.enabled) {
+      aiService = new AIService(eventEmitter, {
+        services: {
+          editorService,
+          fileSystem,
+          storageService,
+        },
+      });
+    }
+
+    const workbenchService = new WorkbenchService(eventEmitter, {
       services: {
         editorService,
         explorerService,
         storageService,
         themeService,
+        aiService,
       },
       config: opts.config,
       theme: opts.theme ?? "Dark",
     });
+
+    return {
+      workbenchService,
+      editorService,
+      explorerService,
+      fileSystem,
+      storageService,
+      aiService,
+    };
   }
 
   static async createWeb(opts: WebPresetOptions = {}) {
@@ -127,12 +154,25 @@ export class Workbench {
       workerFactories: opts.workerFactories,
     });
 
+    let aiService: AIService | undefined = undefined;
+
+    if (opts.ai && opts.ai.enabled) {
+      aiService = new AIService(eventEmitter, {
+        services: {
+          editorService,
+          fileSystem,
+          storageService,
+        },
+      });
+    }
+
     const workbenchService = new WorkbenchService(eventEmitter, {
       services: {
         editorService,
         explorerService,
         storageService,
         themeService,
+        aiService,
       },
       config: opts.config,
       theme: opts.theme ?? "Dark",
@@ -144,6 +184,7 @@ export class Workbench {
       explorerService,
       fileSystem,
       storageService,
+      aiService,
     };
   }
 }

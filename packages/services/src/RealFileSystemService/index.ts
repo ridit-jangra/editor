@@ -1,12 +1,6 @@
 import { Service } from "../service";
 import { IFileSystem } from "../FileSystemService";
 
-declare global {
-  interface Window {
-    fs: IFileSystem;
-  }
-}
-
 export class RealFileSystemService extends Service implements IFileSystem {
   constructor(private window: any) {
     super("RealFileSystemService");
@@ -43,6 +37,9 @@ export class RealFileSystemService extends Service implements IFileSystem {
   }
   getRootStructure(path: string) {
     return this.window.fs.getRootStructure(path);
+  }
+  glob(pattern: string, opts?: { cwd?: string }) {
+    return this.window.fs.glob(pattern, opts);
   }
   // readBase64(path: string) {
   //   return this.window.fs.readBase64(path);
