@@ -215,6 +215,34 @@ export class EditorService extends Service {
       ) ?? null
     );
   }
+
+  getSelection() {
+    return this.monaco.getSelection();
+  }
+
+  getCursorPosition() {
+    return this.monaco.getCursorPosition();
+  }
+
+  getCurrentFile() {
+    return this.monaco.getCurrentFile();
+  }
+
+  insertAtCursor(text: string) {
+    return this.monaco.insertAtCursor(text);
+  }
+
+  replaceSelection(text: string) {
+    return this.monaco.replaceSelection(text);
+  }
+
+  replaceFileContent(text: string) {
+    return this.monaco.replaceFileContent(text);
+  }
+
+  getDiagnostics() {
+    return this.monaco.getDiagnostics();
+  }
 }
 
 function _fade_out(el: HTMLElement, ms = 120): Promise<void> {

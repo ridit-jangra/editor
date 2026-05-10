@@ -31,6 +31,7 @@ export type WebPresetOptions = {
 export type ElectronPresetOptions = {
   rootPath: string;
   lsp?: {
+    enabled: boolean;
     disableInBuiltTypescriptWorker?: boolean;
   };
   config?: Partial<WorkbenchConfig>;
@@ -96,6 +97,7 @@ export class Workbench {
           editorService,
           fileSystem,
           storageService,
+          explorerService,
         },
       });
     }
@@ -162,6 +164,7 @@ export class Workbench {
           editorService,
           fileSystem,
           storageService,
+          explorerService,
         },
       });
     }

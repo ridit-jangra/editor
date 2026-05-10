@@ -581,6 +581,119 @@ export class MonacoEditor implements IEditor {
       this._save_active_model_state();
     });
   }
+
+  getActiveModel(): ModelEntry | null {
+    return this.active_model;
+  }
+
+  getCurrentFile(): string | null {
+    return this.active_model?.uri ?? null;
+  }
+
+  getSelection() {
+    if (!this.editor) return null;
+
+    const sel = this.editor.getSelection();
+    if (!sel) return null;
+
+    const model = this.editor.getModel();
+    if (!model) return null;
+
+    return {
+      startLine: sel.startLineNumber,
+      startCol: sel.startColumn,
+      endLine: sel.endLineNumber,
+      endCol: sel.endColumn,
+      text: model.getValueInRange(sel),
+    };
+  }
+
+  getCursorPosition() {
+    if (!this.editor) return null;
+
+    const pos = this.editor.getPosition();
+    if (!pos) return null;
+
+    return {
+      line: pos.lineNumber,
+      col: pos.column,
+    };
+  }
+
+  async insertAtCursor(text: string) {
+    if (!this.editor) return;
+
+    const position = this.editor.getPosition();
+    if (!position) return;
+
+    this.editor.executeEdits("ai", [
+      {
+        range: new monaco.Range(
+          position.lineNumber,
+          position.column,
+          position.lineNumber,
+          position.column,
+        ),
+        text,
+        forceMoveMarkers: true,
+      },
+    ]);
+  }
+
+  async replaceSelection(text: string) {
+    if (!this.editor) return;
+
+    const selection = this.editor.getSelection();
+    if (!selection) return;
+
+    this.editor.executeEdits("ai", [
+      {
+        range: selection,
+        text,
+        forceMoveMarkers: true,
+      },
+    ]);
+  }
+
+  async replaceFileContent(text: string) {
+    if (!this.editor) return;
+
+    const model = this.editor.getModel();
+    if (!model) return;
+
+    const fullRange = model.getFullModelRange();
+
+    this.editor.executeEdits("ai", [
+      {
+        range: fullRange,
+        text,
+        forceMoveMarkers: true,
+      },
+    ]);
+  }
+
+  revealPosition(line: number, col: number) {
+    if (!this.editor) return;
+
+    this.editor.revealPositionInCenter({
+      lineNumber: line,
+      column: col,
+    });
+
+    this.editor.setPosition({
+      lineNumber: line,
+      column: col,
+    });
+  }
+
+  getDiagnostics() {
+    const model = this.editor?.getModel();
+    if (!model) return [];
+
+    return monaco.editor.getModelMarkers({
+      resource: model.uri,
+    });
+  }
 }
 
 export function setup_monaco_workers(

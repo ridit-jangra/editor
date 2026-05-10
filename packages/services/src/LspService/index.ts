@@ -85,6 +85,10 @@ export class LspService extends Service {
     this.client = createClient(monaco);
   }
 
+  getClient(): Client | null {
+    return this.client;
+  }
+
   updateClientConfiguration(workspaceFolderPath: string) {
     if (!this.client) {
       console.error(

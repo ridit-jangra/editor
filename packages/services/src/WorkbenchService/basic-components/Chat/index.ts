@@ -72,7 +72,7 @@ export class ChatComponent {
     this.setLoading(true);
 
     try {
-      const result = await this.aiService.chat({ prompt });
+      const result = await this.aiService.chat({ prompt, withMemory: true });
       this.addMessage("assistant", result.text);
     } catch (err) {
       this.addMessage("assistant", `Error: ${String(err)}`);
